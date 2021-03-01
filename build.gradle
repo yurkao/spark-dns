@@ -1,0 +1,41 @@
+plugins {
+    id 'java'
+}
+
+project.version = "1.0.0"
+group 'com.acme'
+
+configurations {
+    testCompile.extendsFrom compileOnly
+    testAnnotationProcessor.extendsFrom annotationProcessor
+}
+
+repositories {
+    mavenCentral()
+}
+
+test {
+    useJUnitPlatform()
+    testLogging.showStandardStreams = true
+    testLogging.exceptionFormat = 'full'
+}
+
+dependencies {
+
+    compile group: 'dnsjava', name: 'dnsjava', version: "2.1.9"
+
+    compileOnly group: 'org.apache.spark', name: 'spark-sql_2.12', version: "3.0.1"
+    compileOnly group: 'org.apache.spark', name: 'spark-core_2.12', version: "3.0.1"
+
+    compileOnly "org.projectlombok:lombok:1.18.12"
+    annotationProcessor "org.projectlombok:lombok:1.18.12"
+
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.12"
+    testCompile "org.projectlombok:lombok:1.18.12"
+    testCompile group: 'org.assertj', name: 'assertj-core', version: "3.15.0"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:' + "5.3.1"
+    testRuntime 'org.junit.jupiter:junit-jupiter-engine:' + "5.3.1"
+    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: "5.4.2"
+    testCompile group: 'org.apache.spark', name: 'spark-sql_2.12', version: "3.0.1"
+    testCompile group: 'org.apache.spark', name: 'spark-core_2.12', version: "3.0.1"
+}
