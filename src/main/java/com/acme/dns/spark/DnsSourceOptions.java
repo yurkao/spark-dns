@@ -42,6 +42,8 @@ public class DnsSourceOptions implements Serializable {
     public static final String DEFAULT_XFR_TIMEOUT = "10";
     public static final String XFR_TYPE_OPT = "xfr";
     public static final String DEFAULT_XFR_TYPE = "IXFR";
+    public static final String IGNORE_FAILURES_OPT = "ignore-failures";
+    public static final String DEFAULT_IGNORE_FAILURES = "false";
 
     private final List<Name> zones;
     private final SocketAddress server;
@@ -49,6 +51,7 @@ public class DnsSourceOptions implements Serializable {
     private final long initialSerial;
     private final int timeout;
     private final XfrType xfrType;
+    private final boolean ignoreFailures;
 
 
     public DnsSourceOptions(scala.collection.immutable.Map<String, String> parameters) {
@@ -59,6 +62,7 @@ public class DnsSourceOptions implements Serializable {
         initialSerial = parseInitialSerial(options);
         timeout = parseXfrTimeout(options);
         xfrType = parseXfrType(options);
+        ignoreFailures = parseIgnoreChanges(options);
     }
 
     public static Map<String, String> toJavaMap(scala.collection.immutable.Map<String, String> parameters) {
@@ -120,5 +124,12 @@ public class DnsSourceOptions implements Serializable {
         final String value = options.getOrDefault(XFR_TYPE_OPT, DEFAULT_XFR_TYPE);
         Preconditions.checkArgument(!Strings.isNullOrEmpty(value), "Xfr type not be empty");
         return XfrType.valueOf(value.toUpperCase());
+    }
+
+    @SneakyThrows
+    public static boolean parseIgnoreChanges(Map<String, String> options) {
+        final String value = options.getOrDefault(IGNORE_FAILURES_OPT, IGNORE_FAILURES_OPT);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(value), "ignore failures must not be empty");
+        return Boolean.parseBoolean(value.toLowerCase());
     }
 }

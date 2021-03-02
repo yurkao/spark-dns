@@ -36,8 +36,9 @@ public class DnsSourceRelationProvider implements
         final HashMap<DnsZoneParams, ZoneVersion> map = createDnsZoneVersionMap(sqlContext, options);
         final int timeout = options.getTimeout();
         final XfrType xfrType = options.getXfrType();
+        final boolean ignoreFailures = options.isIgnoreFailures();
         log.info("Loading from {} DNS zones with {}", map.size(), xfrType.name());
-        return new DnsSourceRelation(sqlContext, map, timeout, xfrType);
+        return new DnsSourceRelation(sqlContext, map, timeout, xfrType, ignoreFailures);
     } // allow to pick/lookup data source by name
 
     @Override
@@ -51,8 +52,9 @@ public class DnsSourceRelationProvider implements
         final HashMap<DnsZoneParams, ZoneVersion> dnsZoneVersionMap = createDnsZoneVersionMap(sqlContext, options);
         final int timeout = options.getTimeout();
         final XfrType xfrType = options.getXfrType();
+        final boolean ignoreFailures = options.isIgnoreFailures();
         log.info("Loading from {} DNS zones", dnsZoneVersionMap.size());
-        return new DnsStreamingSource(sqlContext, metadataPath, dnsZoneVersionMap, timeout, xfrType);
+        return new DnsStreamingSource(sqlContext, metadataPath, dnsZoneVersionMap, timeout, xfrType, ignoreFailures);
     }
 
     private HashMap<DnsZoneParams, ZoneVersion> createDnsZoneVersionMap(SQLContext sqlContext, DnsSourceOptions options) {

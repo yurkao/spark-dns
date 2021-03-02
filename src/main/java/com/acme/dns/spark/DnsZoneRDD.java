@@ -11,11 +11,14 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Row;
+import org.xbill.DNS.ZoneTransferException;
 import scala.collection.Iterator;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 import scala.reflect.ClassTag;
 
+import java.io.IOException;
+import java.net.ConnectException;
 import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.List;
@@ -33,12 +36,14 @@ public class DnsZoneRDD extends RDD<Row> {
     private final Map<DnsZoneParams, ZoneVersion> zoneVersionMap;
     private final int timeout;
     private final XfrType xfrType;
+    private final boolean ignoreFailures;
 
-    public DnsZoneRDD(SparkContext sc, Map<DnsZoneParams, ZoneVersion> zoneVersionMap, int timeout, XfrType xfrType) {
+    public DnsZoneRDD(SparkContext sc, Map<DnsZoneParams, ZoneVersion> zoneVersionMap, int timeout, XfrType xfrType, boolean ignoreFailures) {
         super(sc, DEPENDENCY_SEQ, ROW_CLASS_TAG);
         this.zoneVersionMap = zoneVersionMap;
         this.timeout = timeout;
         this.xfrType = xfrType;
+        this.ignoreFailures = ignoreFailures;
         int partitionId = 0;
         partitions = new DnsZonePartition[zoneVersionMap.size()];
 
@@ -73,7 +78,17 @@ public class DnsZoneRDD extends RDD<Row> {
             serial = zoneInfo.getSerial();
         }
 
-        final List<OrgDnsRecord> dnsRecords = source.fetch(serial);
+        List<OrgDnsRecord> dnsRecords;
+        try {
+            dnsRecords = source.fetch(serial);
+        } catch (IOException | ZoneTransferException e) {
+            if (!ignoreFailures) {
+                throw e;
+            }
+            log.info("Failed fetching data for {} with xfr={} and serial={}", partition, xfrType, serial, e);
+            log.info("Suppressing error as requested");
+            dnsRecords = Collections.emptyList();
+        }
 
         final Timestamp ts = new Timestamp(System.currentTimeMillis());
         final DnsRecordToRowConverter rowConverter = new DnsRecordToRowConverter(ts, zoneInfo.getName().toString(), orgName);

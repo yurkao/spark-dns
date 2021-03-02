@@ -3,6 +3,7 @@ package com.acme.dns;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.spark.SparkException;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
@@ -16,8 +17,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.*;
 
 @Slf4j
 class DnsSourceRelationProviderTest {
@@ -26,17 +26,12 @@ class DnsSourceRelationProviderTest {
     String checkpoint;
     String outputPath;
 
-    static final Map<String, String> options = new HashMap<>();
+    Map<String, String> options;
 
     @BeforeAll
     static void init() throws IOException {
         spark = SparkSession.builder().master("local").getOrCreate();
         fs = FileSystem.newInstance(spark.sparkContext().hadoopConfiguration());
-        options.put("server", "10.0.0.1");
-        options.put("port", "53");
-        options.put("zones", "example.acme.,another.zone");
-        options.put("organization", "Acme Inc.");
-        options.put("xfr", "ixfr");
     }
 
     @AfterAll
@@ -48,6 +43,12 @@ class DnsSourceRelationProviderTest {
     void setUp() {
         checkpoint = "./checkpoint-" + UUID.randomUUID();
         outputPath = "./output-" + UUID.randomUUID();
+        options = new HashMap<>();
+        options.put("server", "10.0.0.1");
+        options.put("port", "53");
+        options.put("zones", "example.acme.,another.zone");
+        options.put("organization", "Acme Inc.");
+        options.put("xfr", "ixfr");
     }
 
     @AfterEach
@@ -99,6 +100,51 @@ class DnsSourceRelationProviderTest {
         assertThat(df.count())
                 .as("Some DNS data should be written to parquet")
                 .isNotZero();
+    }
+
+    @Test
+    void sparkBatchReadIgnoreFailures() {
+        options.put("port", "22");
+        options.put("ignore-failures", "true");
+
+        assertThatCode(() -> spark.read().format("dns").options(options).load().show(false))
+                .as("XFR failures should be suppressed")
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void sparkBatchReadNoIgnoreFailures() {
+        options.put("port", "22");
+
+        assertThatThrownBy(() -> spark.read().format("dns").options(options).load().show(false))
+                .as("Reading should fail if ignore failures is disabled")
+                .isInstanceOf(SparkException.class);
+    }
+
+    @Test
+    void sqlBatchReadIgnoreFailures() {
+        options.put("port", "22");
+        options.put("ignore-failures", "true");
+
+        assertThatCode(() -> {
+            spark.sql( "CREATE TABLE my_table USING dns " +
+                    "OPTIONS (server='10.0.0.1', port=22, zones='example.acme', timeout=2, organization='Acme Inc.', 'ignore-failures'='true')");
+            spark.sql("SELECT * FROM my_table").show(false);
+        })
+                .as("XFR failures should be suppressed")
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void sqlBatchReadNoIgnoreFailures() {
+
+        assertThatThrownBy(() -> {
+            spark.sql( "CREATE TABLE my_table USING dns " +
+                    "OPTIONS (server='10.0.0.1', port=22, zones='example.acme', timeout=2, organization='Acme Inc.', 'ignore-failures'='false')");
+            spark.sql("SELECT * FROM my_table").show(false);
+        })
+                .as("SQL Reading should fail if ignore failures is disabled")
+                .isInstanceOf(SparkException.class);
     }
 
     @Test

@@ -22,6 +22,7 @@ though data from multiple zones is retrieved in parallel (each DNS zone is handl
 | zones | Comma separated list of DNS forward zones | N/A | Y |
 | timeout | zone transfer timeout (in seconds) | 10 | N |
 | xfr | zone transfer type (case-insensitive): AXFR or IXFR | IXFR | N |
+| ignore-failures | if set to true, XFR errors will be ignored and no records will be returned. if set to false, exception will be thrown ion XFR failures: true or false | false | N |
 
 ## Schema
 ```
@@ -120,10 +121,10 @@ pyspark --jars spark-dns-1.0.0.jar
     - When suing `xfr=ixfr`, only DNS zone updates from initial serial will be returned. 
         - On Structured Streaming this may produce empty DataFrames on no updates
     - When using `xfr=axfr`, entire DNS zone `A` records will be returned
+7. Handling temporary failures during zone transfer (similar to `failOnDataLoss` in Spark+Kafka)
 
 ### Upcoming features
-1. Handling temporary failures during zone transfer (similar to `failOnDataLoss` in Spark+Kafka)
-2. Transaction signatures support for DNS zone transfers (aka TSIGs)
+1. Transaction signatures support for DNS zone transfers (aka TSIGs)
 
 # Tested on
 | Spark version | JDK | DNS servers | 

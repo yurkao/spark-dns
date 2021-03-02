@@ -20,6 +20,7 @@ public class DnsSourceRelation extends BaseRelation implements TableScan {
     private final Map<DnsZoneParams, ZoneVersion> zoneVersionMap; // DNS zone
     private final int timeout;
     private final XfrType xfrType;
+    private final boolean ignoreFailures;
 
     @Override
     public SQLContext sqlContext() {
@@ -37,7 +38,7 @@ public class DnsSourceRelation extends BaseRelation implements TableScan {
      */
     @Override
     public RDD<Row> buildScan() {
-        return new DnsZoneRDD(sqlContext.sparkContext(), zoneVersionMap, timeout, xfrType);
+        return new DnsZoneRDD(sqlContext.sparkContext(), zoneVersionMap, timeout, xfrType, ignoreFailures);
     }
 
     @Override

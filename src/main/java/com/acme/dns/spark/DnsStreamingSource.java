@@ -49,15 +49,17 @@ public class DnsStreamingSource implements Source {
     private final XfrType xfrType;
     private final FileSystem fs;
     private final Path progressPath;
+    private final boolean ignoreFailures;
     private long batchId = 0L;
 
     @SneakyThrows
-    public DnsStreamingSource(SQLContext sqlContext,  String metadataPath, Map<DnsZoneParams, ZoneVersion> zoneVersionMap, int timeout, XfrType xfrType) {
+    public DnsStreamingSource(SQLContext sqlContext,  String metadataPath, Map<DnsZoneParams, ZoneVersion> zoneVersionMap, int timeout, XfrType xfrType, boolean ignoreFailures) {
         this.sqlContext = sqlContext;
         this.timeout = timeout;
         this.xfrType = xfrType;
         fs = FileSystem.newInstance(sqlContext.sparkContext().hadoopConfiguration());
         progressPath = new Path(metadataPath, "progress");
+        this.ignoreFailures = ignoreFailures;
         restoreTenantProgresses(fs, progressPath, zoneVersionMap);
         this.zoneVersionMap = zoneVersionMap;
     }
@@ -154,7 +156,7 @@ public class DnsStreamingSource implements Source {
             log.info("Offset for zone {} (current version {}): {}", zoneName, zoneVersion, serial);
             batchParams.put(dnsZoneParams, zoneVersion);
         });
-        final BaseRelation relation = new DnsSourceRelation(sqlContext, batchParams, timeout, xfrType);
+        final BaseRelation relation = new DnsSourceRelation(sqlContext, batchParams, timeout, xfrType, ignoreFailures);
 
         final Seq<AttributeReference> attributeReferenceSeq = relation.schema().toAttributes();
         final LogicalRelation plan = new LogicalRelation(relation, attributeReferenceSeq, Option.empty(), true);
