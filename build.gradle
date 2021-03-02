@@ -40,7 +40,7 @@ dependencies {
     compileOnly group: 'org.apache.spark', name: 'spark-sql_2.12', version: "3.0.1"
     compileOnly group: 'org.apache.spark', name: 'spark-core_2.12', version: "3.0.1"
 
-    compileOnly "org.projectlombok:lombok:1.18.12"
+    compileOnly "org.projectlombok:lombok:1.18.18"
     annotationProcessor "org.projectlombok:lombok:1.18.12"
 
     testAnnotationProcessor "org.projectlombok:lombok:1.18.12"
