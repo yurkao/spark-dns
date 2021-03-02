@@ -45,7 +45,7 @@ dependencies {
 
     testAnnotationProcessor "org.projectlombok:lombok:1.18.12"
     testCompile "org.projectlombok:lombok:1.18.12"
-    testCompile group: 'org.assertj', name: 'assertj-core', version: "3.15.0"
+    testCompile group: 'org.assertj', name: 'assertj-core', version: "3.19.0"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:' + "5.3.1"
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:' + "5.3.1"
     testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: "5.4.2"
