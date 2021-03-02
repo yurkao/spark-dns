@@ -6,6 +6,7 @@ on:
   pull_request:
     branches: [ master ]
 
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,7 +14,7 @@ jobs:
       matrix:
         java: [ 11.0.x ]
 
-    name: sparn-dns on JDK ${{ matrix.java }}
+    name: Java ${{ matrix.java }} sample
 
     steps:
       - uses: actions/checkout@v2
@@ -28,3 +29,9 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew -x test build jar
+
+      - name: Publish package
+        run: gradle publish
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}

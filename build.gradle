@@ -20,6 +20,19 @@ test {
     testLogging.exceptionFormat = 'full'
 }
 
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/yurkao/spark-dns"
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+
 dependencies {
 
     compile group: 'dnsjava', name: 'dnsjava', version: "2.1.9"
