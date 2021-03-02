@@ -103,9 +103,11 @@ class DnsSourceRelationProviderTest {
     }
 
     @Test
+    @Timeout(value = 30)
     void sparkBatchReadIgnoreFailures() {
         options.put("port", "22");
         options.put("ignore-failures", "true");
+        options.put("timeout", "1");
 
         assertThatCode(() -> spark.read().format("dns").options(options).load().show(false))
                 .as("XFR failures should be suppressed")
@@ -113,8 +115,10 @@ class DnsSourceRelationProviderTest {
     }
 
     @Test
+    @Timeout(value = 30)
     void sparkBatchReadNoIgnoreFailures() {
         options.put("port", "22");
+        options.put("timeout", "1");
 
         assertThatThrownBy(() -> spark.read().format("dns").options(options).load().show(false))
                 .as("Reading should fail if ignore failures is disabled")
@@ -122,8 +126,10 @@ class DnsSourceRelationProviderTest {
     }
 
     @Test
+    @Timeout(value = 30)
     void sqlBatchReadIgnoreFailures() {
         options.put("port", "22");
+        options.put("timeout", "1");
         options.put("ignore-failures", "true");
 
         assertThatCode(() -> {
