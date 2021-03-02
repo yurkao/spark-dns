@@ -1,5 +1,6 @@
 package com.acme.dns.spark;
 
+import com.acme.dns.xfr.XfrType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import lombok.Getter;
@@ -36,11 +37,18 @@ public class DnsSourceOptions implements Serializable {
     public static final String DEFAULT_SERIAL = "0";
     // comma separated value of zone names
     public static final String ZONE_OPT = "zones";
+    // zone transfer timeout (in seconds)
+    public static final String XFR_TIMEOUT_OPT = "timeout";
+    public static final String DEFAULT_XFR_TIMEOUT = "10";
+    public static final String XFR_TYPE_OPT = "xfr";
+    public static final String DEFAULT_XFR_TYPE = "IXFR";
 
     private final List<Name> zones;
     private final SocketAddress server;
     private final String organization;
     private final long initialSerial;
+    private final int timeout;
+    private final XfrType xfrType;
 
 
     public DnsSourceOptions(scala.collection.immutable.Map<String, String> parameters) {
@@ -49,6 +57,8 @@ public class DnsSourceOptions implements Serializable {
         server = parseServer(options);
         organization = parseOrganization(options);
         initialSerial = parseInitialSerial(options);
+        timeout = parseXfrTimeout(options);
+        xfrType = parseXfrType(options);
     }
 
     public static Map<String, String> toJavaMap(scala.collection.immutable.Map<String, String> parameters) {
@@ -91,7 +101,24 @@ public class DnsSourceOptions implements Serializable {
     public static long parseInitialSerial(Map<String, String> options) {
         final String value = options.getOrDefault(SERIAL_OPT, DEFAULT_SERIAL);
         Preconditions.checkArgument(!Strings.isNullOrEmpty(value), "Initial serial count not be empty");
-        return Long.parseLong(value);
+        final long serial = Long.parseLong(value);
+        Preconditions.checkArgument(serial >=0, "Initial serial must be positive number");
+        return serial;
     }
 
+    @SneakyThrows
+    public static int parseXfrTimeout(Map<String, String> options) {
+        final String value = options.getOrDefault(XFR_TIMEOUT_OPT, DEFAULT_XFR_TIMEOUT);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(value), "Initial serial count not be empty");
+        final int timeout = Integer.parseInt(value);
+        Preconditions.checkArgument(timeout >= 0, "Timeout must be positive number");
+        return timeout;
+    }
+
+    @SneakyThrows
+    public static XfrType parseXfrType(Map<String, String> options) {
+        final String value = options.getOrDefault(XFR_TYPE_OPT, DEFAULT_XFR_TYPE);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(value), "Xfr type not be empty");
+        return XfrType.valueOf(value.toUpperCase());
+    }
 }

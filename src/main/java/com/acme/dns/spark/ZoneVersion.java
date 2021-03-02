@@ -6,8 +6,8 @@ import org.apache.spark.util.AccumulatorV2;
 /**
  * per DNS zone accumulator sharable between driver and executor to track last loaded
  * SOA record.
- * Preparing for Structured Streaming read support
- * also good for Spark Web UI tracking
+ * Mainly for Structured Streaming read support when using IXFR: the way driver knows what zone serial was last retrieved by executor to construct offsets
+ * Also good for Spark Web UI tracking
  */
 @ToString
 public class ZoneVersion extends AccumulatorV2<Long, Long> {

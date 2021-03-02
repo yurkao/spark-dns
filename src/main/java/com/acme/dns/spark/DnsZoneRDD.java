@@ -2,6 +2,7 @@ package com.acme.dns.spark;
 
 import com.acme.dns.dao.OrgDnsRecord;
 import com.acme.dns.xfr.Xfr;
+import com.acme.dns.xfr.XfrType;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.spark.Dependency;
@@ -30,10 +31,14 @@ public class DnsZoneRDD extends RDD<Row> {
 
     private final Partition[] partitions;
     private final Map<DnsZoneParams, ZoneVersion> zoneVersionMap;
+    private final int timeout;
+    private final XfrType xfrType;
 
-    public DnsZoneRDD(SparkContext sc, Map<DnsZoneParams, ZoneVersion> zoneVersionMap) {
+    public DnsZoneRDD(SparkContext sc, Map<DnsZoneParams, ZoneVersion> zoneVersionMap, int timeout, XfrType xfrType) {
         super(sc, DEPENDENCY_SEQ, ROW_CLASS_TAG);
         this.zoneVersionMap = zoneVersionMap;
+        this.timeout = timeout;
+        this.xfrType = xfrType;
         int partitionId = 0;
         partitions = new DnsZonePartition[zoneVersionMap.size()];
 
@@ -45,16 +50,30 @@ public class DnsZoneRDD extends RDD<Row> {
     }
 
 
+    /**
+     * Get data for specific partition (invoked on executor side)
+     *
+     * @param split current partition
+     * @param ignored task context
+     * @return iterator or Spark rows
+     */
     @SneakyThrows
     @Override
-    public Iterator<Row> compute(Partition split, TaskContext context) {
+    public Iterator<Row> compute(Partition split, TaskContext ignored) {
         final DnsZonePartition partition = (DnsZonePartition) split;
         final DnsZoneParams zoneInfo = partition.getZoneInfo();
         final String orgName = zoneInfo.getOrgName();
         final ZoneVersion zoneVersion = zoneVersionMap.get(zoneInfo);
 
-        final Xfr source = new Xfr(zoneInfo.getName(), zoneInfo.getServer(), zoneVersion);
-        final List<OrgDnsRecord> dnsRecords = source.fetch(zoneInfo.getSerial());
+        final Xfr source = new Xfr(zoneInfo.getName(), zoneInfo.getServer(), zoneVersion, timeout, xfrType);
+        final long serial;
+        if (XfrType.AXFR.equals(xfrType)) {
+            serial = 0L; // on AXFR we always want to get all DNS records
+        } else {
+            serial = zoneInfo.getSerial();
+        }
+
+        final List<OrgDnsRecord> dnsRecords = source.fetch(serial);
 
         final Timestamp ts = new Timestamp(System.currentTimeMillis());
         final DnsRecordToRowConverter rowConverter = new DnsRecordToRowConverter(ts, zoneInfo.getName().toString(), orgName);

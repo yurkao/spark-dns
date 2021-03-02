@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.net.SocketAddress;
 
 /**
- * Single zone tranfer param (per DNS zone)
+ * Single zone transfer param (per DNS zone)
  */
 @RequiredArgsConstructor
 @ToString
@@ -22,4 +22,13 @@ public class DnsZoneParams implements Serializable {
     private final SocketAddress server;
     private final long serial;
     private final String orgName;
+
+    /**
+     * Make a copy of zone parameters for specified zone serial
+     * @param serial new serial
+     * @return copy of current zone with specified serial
+     */
+    public DnsZoneParams copy(long serial) {
+        return new DnsZoneParams(name, server, serial, orgName);
+    }
 }
