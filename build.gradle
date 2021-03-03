@@ -34,6 +34,8 @@ dependencies {
     testCompile "org.projectlombok:lombok:1.18.12"
     testCompile group: 'org.assertj', name: 'assertj-core', version: "3.19.0"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:' + "5.3.1"
+    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.8.0'
+
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:' + "5.3.1"
     testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: "5.7.1"
     testCompile group: 'org.apache.spark', name: 'spark-sql_2.12', version: "3.1.1"

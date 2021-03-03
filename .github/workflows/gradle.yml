@@ -16,6 +16,15 @@ jobs:
         java: [ 11.0.x ]
     name: Java ${{ matrix.java }} sample
 
+    services:
+      dns:
+        image: internetsystemsconsortium/bind9:9.11
+        options: >-
+          -v ${{ github.workspace }}/dns-server/bind:/etc/bind
+        ports:
+          - 53:53/udp
+          - 53:53/tcpp
+
     steps:
       - uses: actions/checkout@v2
 
