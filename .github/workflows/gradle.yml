@@ -15,19 +15,19 @@ jobs:
       matrix:
         java: [ 11.0.x ]
 
-    services:
-      dns:
-        image: internetsystemsconsortium/bind9:9.11
-        volumes:
-          - ${{ github.workspace }}/dns-server/bind:/etc/bind
-        ports:
-          - 5353:53/udp
-          - 5353:53/tcp
+#    services:
+#      dns:
+#        image: internetsystemsconsortium/bind9:9.11
+#        volumes:
+#          - ${{ github.workspace }}/dns-server/bind:/etc/bind
+#        ports:
+#          - 5353:53/udp
+#          - 5353:53/tcp
 
     name: Java ${{ matrix.java }} sample
 
     steps:
-      - name: checpout
+      - name: checkout
         uses: actions/checkout@v2
         with:
           clean: false
