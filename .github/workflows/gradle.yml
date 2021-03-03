@@ -23,7 +23,7 @@ jobs:
           -v ${{ github.workspace }}/dns-server/bind:/etc/bind
         ports:
           - 53:53/udp
-          - 53:53/tcpp
+          - 53:53/tcp
 
     steps:
       - uses: actions/checkout@v2
