@@ -20,7 +20,9 @@ jobs:
       dns:
         image: internetsystemsconsortium/bind9:9.11
         options: >-
-          -v ${{ github.workspace }}/dns-server/bind:/etc/bind
+           /usr/sbin/named -g  -c /etc/bind/named.conf -u root
+        volumes:
+          - ${{ github.workspace }}:/dns-server/bind:/etc/bind
         ports:
           - 5353:53/udp
           - 5353:53/tcp
