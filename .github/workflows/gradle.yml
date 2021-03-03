@@ -11,13 +11,11 @@ on:
 jobs:
   checkout:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java: [ 11.0.x ]
     steps:
       - uses: actions/checkout@v2
 
   build:
+    needs: checkout
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -26,8 +24,6 @@ jobs:
     services:
       dns:
         image: internetsystemsconsortium/bind9:9.11
-        options: >-
-           /usr/sbin/named -g  -c /etc/bind/named.conf -u root
         volumes:
           - ${{ github.workspace }}:/dns-server/bind:/etc/bind
         ports:
