@@ -25,7 +25,7 @@ jobs:
       dns:
         image: internetsystemsconsortium/bind9:9.11
         volumes:
-          - ${{ github.workspace }}:/dns-server/bind:/etc/bind
+          - ${{ github.workspace }}/dns-server/bind:/etc/bind
         ports:
           - 5353:53/udp
           - 5353:53/tcp
@@ -38,6 +38,9 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
+
+      - name: Grant execute permission for gradlew
+        run: ls -l ${{ github.workspace }}
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
