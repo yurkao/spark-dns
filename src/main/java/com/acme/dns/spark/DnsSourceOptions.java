@@ -44,6 +44,8 @@ public class DnsSourceOptions implements Serializable {
     public static final String DEFAULT_XFR_TYPE = "IXFR";
     public static final String IGNORE_FAILURES_OPT = "ignore-failures";
     public static final String DEFAULT_IGNORE_FAILURES = "false";
+    public static final String MAX_KEPT_COMMITS = "max-kept-commits";
+    public static final String DEFAULT_MAX_KEPT_COMMITS = "10";
 
     private final List<Name> zones;
     private final SocketAddress server;
@@ -52,6 +54,7 @@ public class DnsSourceOptions implements Serializable {
     private final int timeout;
     private final XfrType xfrType;
     private final boolean ignoreFailures;
+    private final int maxKeptCommits; // streaming only
 
 
     public DnsSourceOptions(scala.collection.immutable.Map<String, String> parameters) {
@@ -63,6 +66,7 @@ public class DnsSourceOptions implements Serializable {
         timeout = parseXfrTimeout(options);
         xfrType = parseXfrType(options);
         ignoreFailures = parseIgnoreChanges(options);
+        maxKeptCommits = parseMaxKeptCommits(options);
     }
 
     public static Map<String, String> toJavaMap(scala.collection.immutable.Map<String, String> parameters) {
@@ -131,5 +135,14 @@ public class DnsSourceOptions implements Serializable {
         final String value = options.getOrDefault(IGNORE_FAILURES_OPT, IGNORE_FAILURES_OPT);
         Preconditions.checkArgument(!Strings.isNullOrEmpty(value), "ignore failures must not be empty");
         return Boolean.parseBoolean(value.toLowerCase());
+    }
+
+    @SneakyThrows
+    public static int parseMaxKeptCommits(Map<String, String> options) {
+        final String value = options.getOrDefault(MAX_KEPT_COMMITS, DEFAULT_MAX_KEPT_COMMITS);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(value), "Max kept commits not be empty");
+        final int maxKeptCommits = Integer.parseInt(value);
+        Preconditions.checkArgument(maxKeptCommits >= 0, "Max kept commits must be positive number");
+        return maxKeptCommits;
     }
 }

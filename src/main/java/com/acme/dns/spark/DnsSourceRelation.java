@@ -1,6 +1,5 @@
 package com.acme.dns.spark;
 
-import com.acme.dns.xfr.XfrType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.spark.rdd.RDD;
@@ -18,9 +17,7 @@ import java.util.stream.Collectors;
 public class DnsSourceRelation extends BaseRelation implements TableScan {
     private final SQLContext sqlContext;
     private final Map<DnsZoneParams, ZoneVersion> zoneVersionMap; // DNS zone
-    private final int timeout;
-    private final XfrType xfrType;
-    private final boolean ignoreFailures;
+    private final GlobalDnsParams globalDnsParams;
 
     @Override
     public SQLContext sqlContext() {
@@ -38,7 +35,7 @@ public class DnsSourceRelation extends BaseRelation implements TableScan {
      */
     @Override
     public RDD<Row> buildScan() {
-        return new DnsZoneRDD(sqlContext.sparkContext(), zoneVersionMap, timeout, xfrType, ignoreFailures);
+        return new DnsZoneRDD(sqlContext.sparkContext(), zoneVersionMap, globalDnsParams);
     }
 
     @Override

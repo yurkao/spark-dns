@@ -18,7 +18,6 @@ import scala.collection.Seq;
 import scala.reflect.ClassTag;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.List;
@@ -34,16 +33,14 @@ public class DnsZoneRDD extends RDD<Row> {
 
     private final Partition[] partitions;
     private final Map<DnsZoneParams, ZoneVersion> zoneVersionMap;
-    private final int timeout;
-    private final XfrType xfrType;
-    private final boolean ignoreFailures;
+    private final GlobalDnsParams globalDnsParams;
 
-    public DnsZoneRDD(SparkContext sc, Map<DnsZoneParams, ZoneVersion> zoneVersionMap, int timeout, XfrType xfrType, boolean ignoreFailures) {
+
+    public DnsZoneRDD(SparkContext sc, Map<DnsZoneParams, ZoneVersion> zoneVersionMap, GlobalDnsParams globalDnsParams) {
         super(sc, DEPENDENCY_SEQ, ROW_CLASS_TAG);
         this.zoneVersionMap = zoneVersionMap;
-        this.timeout = timeout;
-        this.xfrType = xfrType;
-        this.ignoreFailures = ignoreFailures;
+        this.globalDnsParams = globalDnsParams;
+
         int partitionId = 0;
         partitions = new DnsZonePartition[zoneVersionMap.size()];
 
@@ -70,6 +67,8 @@ public class DnsZoneRDD extends RDD<Row> {
         final String orgName = zoneInfo.getOrgName();
         final ZoneVersion zoneVersion = zoneVersionMap.get(zoneInfo);
 
+        final int timeout = globalDnsParams.getTimeout();
+        final XfrType xfrType =  globalDnsParams.getXfrType();
         final Xfr source = new Xfr(zoneInfo.getName(), zoneInfo.getServer(), zoneVersion, timeout, xfrType);
         final long serial;
         if (XfrType.AXFR.equals(xfrType)) {
@@ -82,7 +81,7 @@ public class DnsZoneRDD extends RDD<Row> {
         try {
             dnsRecords = source.fetch(serial);
         } catch (IOException | ZoneTransferException e) {
-            if (!ignoreFailures) {
+            if (!globalDnsParams.isIgnoreFailures()) {
                 throw e;
             }
             log.info("Failed fetching data for {} with xfr={} and serial={}", partition, xfrType, serial, e);

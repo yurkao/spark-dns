@@ -1,16 +1,8 @@
 package com.acme.dns.spark;
 
-import com.acme.dns.xfr.XfrType;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.CharStreams;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
@@ -28,9 +20,6 @@ import scala.Option;
 import scala.collection.Seq;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -41,27 +30,18 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DnsStreamingSource implements Source {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
-
     private final SQLContext sqlContext;
     private final Map<DnsZoneParams, ZoneVersion> zoneVersionMap;
-    private final int timeout;
-    private final XfrType xfrType;
-    private final FileSystem fs;
-    private final Path progressPath;
-    private final boolean ignoreFailures;
-    private long batchId = 0L;
+    private final GlobalDnsParams globalDnsParams;
+    private final ProgressSerDe offsetManager;
+    private int batchId;
 
-    @SneakyThrows
-    public DnsStreamingSource(SQLContext sqlContext,  String metadataPath, Map<DnsZoneParams, ZoneVersion> zoneVersionMap, int timeout, XfrType xfrType, boolean ignoreFailures) {
+    public DnsStreamingSource(SQLContext sqlContext, GlobalDnsParams globalDnsParams, Map<DnsZoneParams, ZoneVersion> zoneVersionMap, ProgressSerDe offsetManager) {
         this.sqlContext = sqlContext;
-        this.timeout = timeout;
-        this.xfrType = xfrType;
-        fs = FileSystem.newInstance(sqlContext.sparkContext().hadoopConfiguration());
-        progressPath = new Path(metadataPath, "progress");
-        this.ignoreFailures = ignoreFailures;
-        restoreTenantProgresses(fs, progressPath, zoneVersionMap);
+        this.globalDnsParams = globalDnsParams;
         this.zoneVersionMap = zoneVersionMap;
+        this.offsetManager = offsetManager;
+        batchId = offsetManager.getcurrentBatchId();
     }
 
     @Override
@@ -73,50 +53,6 @@ public class DnsStreamingSource implements Source {
     public Option<Offset> getOffset() {
         final DnsOffset dnsOffset = createDnsOffset();
         return Option.apply(dnsOffset);
-    }
-
-    protected static void restoreTenantProgresses(FileSystem fs, Path progressPath, Map<DnsZoneParams, ZoneVersion> zoneVersionMap) {
-        final Map<String, Long> progresses = loadProgresses(fs, progressPath);
-        final Map<String, DnsZoneParams> map = zoneVersionMap.keySet().stream().collect(Collectors.toMap(dnsZoneParams -> dnsZoneParams.getName().toString(), Function.identity()));
-        for(Map.Entry<String, Long> savedProgresses: progresses.entrySet()) {
-            final String zoneName = savedProgresses.getKey();
-            final DnsZoneParams dnsZoneParams = map.get(zoneName);
-            if (Objects.isNull(dnsZoneParams)) {
-                log.warn("Ignoring zone {}, since it was removed from options between stream restart", zoneName);
-                continue;
-            }
-            final ZoneVersion progress = zoneVersionMap.get(dnsZoneParams);
-            final Long savedSerial = savedProgresses.getValue();
-            log.info("Restoring DNS zone {} progress to {}", dnsZoneParams, savedSerial);
-            progress.setVersion(savedSerial);
-        }
-    }
-
-    @SneakyThrows
-    protected void saveTenantProgresses() {
-        fs.mkdirs(progressPath.getParent());
-        final HashMap<String, Long> progresses = new HashMap<>();
-        zoneVersionMap.forEach((s, tenantProgress) -> progresses.put(s.getName().toString(), tenantProgress.value()));
-        final String content = mapper.writeValueAsString(progresses);
-
-        log.info("Saving tenant progresses: {}", content);
-        try(final FSDataOutputStream outputStream = fs.create(progressPath, true)) {
-            outputStream.write(content.getBytes());
-        }
-    }
-
-    @SneakyThrows
-    private static Map<String, Long> loadProgresses(FileSystem fs, Path progressPath) {
-        if (!fs.exists(progressPath)) {
-            return Collections.emptyMap();
-        }
-        final String content;
-        try(final FSDataInputStream inputStream = fs.open(progressPath)) {
-            content = CharStreams.toString(new InputStreamReader(
-                    inputStream, StandardCharsets.UTF_8));
-        }
-        final TypeReference<Map<String, Long>> typeRef = new TypeReference<>() {};
-        return mapper.readValue(content, typeRef);
     }
 
     private DnsOffset createDnsOffset() {
@@ -156,7 +92,7 @@ public class DnsStreamingSource implements Source {
             log.info("Offset for zone {} (current version {}): {}", zoneName, zoneVersion, serial);
             batchParams.put(dnsZoneParams, zoneVersion);
         });
-        final BaseRelation relation = new DnsSourceRelation(sqlContext, batchParams, timeout, xfrType, ignoreFailures);
+        final BaseRelation relation = new DnsSourceRelation(sqlContext, batchParams, globalDnsParams);
 
         final Seq<AttributeReference> attributeReferenceSeq = relation.schema().toAttributes();
         final LogicalRelation plan = new LogicalRelation(relation, attributeReferenceSeq, Option.empty(), true);
@@ -215,12 +151,17 @@ public class DnsStreamingSource implements Source {
             zoneVersion.setVersion(serial);
             log.info("Updated zone {} serial {} -> {}", zoneName, serial, zoneVersion.value());
         });
+
+        // since DNS does not have polling mechanism and offsets are not presenting end of read data,
+        // but start of reading data we have to commit offsets of data been read and do not rely on Spark commits
+
+        offsetManager.commit(zoneVersionMap);
         log.info("--------- commit #{} end ------------", batchId);
     }
 
     @Override
     public void stop() {
-        saveTenantProgresses();
+        offsetManager.commit(zoneVersionMap);
         zoneVersionMap.values().forEach(ZoneVersion::reset);
     }
 

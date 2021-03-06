@@ -1,7 +1,10 @@
 package com.acme.dns.spark;
 
 import com.acme.dns.xfr.XfrType;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.execution.streaming.Source;
 import org.apache.spark.sql.sources.BaseRelation;
@@ -30,6 +33,7 @@ public class DnsSourceRelationProvider implements
         return "dns";
     }
 
+    @SneakyThrows
     @Override
     public BaseRelation createRelation(SQLContext sqlContext, Map<String, String> parameters) {
         final DnsSourceOptions options = new DnsSourceOptions(parameters);
@@ -38,7 +42,9 @@ public class DnsSourceRelationProvider implements
         final XfrType xfrType = options.getXfrType();
         final boolean ignoreFailures = options.isIgnoreFailures();
         log.info("Loading from {} DNS zones with {}", map.size(), xfrType.name());
-        return new DnsSourceRelation(sqlContext, map, timeout, xfrType, ignoreFailures);
+        final GlobalDnsParams globalDnsParams = new GlobalDnsParams(timeout, xfrType, ignoreFailures);
+
+        return new DnsSourceRelation(sqlContext, map, globalDnsParams);
     } // allow to pick/lookup data source by name
 
     @Override
@@ -46,20 +52,27 @@ public class DnsSourceRelationProvider implements
         return Tuple2.apply(this.shortName(), DnsRecordToRowConverter.SCHEMA);
     }
 
+    @SneakyThrows
     @Override
     public Source createSource(SQLContext sqlContext, String metadataPath, Option<StructType> schema, String providerName, Map<String, String> parameters) {
         final DnsSourceOptions options = new DnsSourceOptions(parameters);
         final HashMap<DnsZoneParams, ZoneVersion> dnsZoneVersionMap = createDnsZoneVersionMap(sqlContext, options);
+        final FileSystem fs = FileSystem.newInstance(sqlContext.sparkContext().hadoopConfiguration());
+        final int maxKeptCommits = options.getMaxKeptCommits();
+        final ProgressSerDe offsetManager = new ProgressSerDe(fs, new Path(metadataPath), maxKeptCommits);
+        offsetManager.loadSavedProgress(dnsZoneVersionMap);
+
         final int timeout = options.getTimeout();
         final XfrType xfrType = options.getXfrType();
         final boolean ignoreFailures = options.isIgnoreFailures();
+        final GlobalDnsParams globalDnsParams = new GlobalDnsParams(timeout, xfrType, ignoreFailures);
         log.info("Loading from {} DNS zones", dnsZoneVersionMap.size());
-        return new DnsStreamingSource(sqlContext, metadataPath, dnsZoneVersionMap, timeout, xfrType, ignoreFailures);
+        return new DnsStreamingSource(sqlContext, globalDnsParams, dnsZoneVersionMap, offsetManager);
     }
 
     private HashMap<DnsZoneParams, ZoneVersion> createDnsZoneVersionMap(SQLContext sqlContext, DnsSourceOptions options) {
         final List<Name> zones = options.getZones();
-        final HashMap<DnsZoneParams, ZoneVersion> map = new HashMap<>();
+        final HashMap<DnsZoneParams, ZoneVersion> dnsZoneProgressMap = new HashMap<>();
         zones.forEach(zone -> {
             final String organization = options.getOrganization();
             final SocketAddress dnsServer = options.getServer();
@@ -68,8 +81,9 @@ public class DnsSourceRelationProvider implements
             final ZoneVersion zoneVersion = new ZoneVersion();
             final String accName = String.format("%s %s", organization, zone.toString());
             sqlContext.sparkContext().register(zoneVersion, accName);
-            map.put(zoneInfo, zoneVersion);
+            dnsZoneProgressMap.put(zoneInfo, zoneVersion);
         });
-        return map;
+
+        return dnsZoneProgressMap;
     }
 }
