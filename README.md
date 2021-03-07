@@ -1,5 +1,5 @@
 # Introduction
-Spark data source for retrieving DNS `A` type records from DNS server.
+Spark DBS is Apache Spark data source for retrieving DNS `A` type records from DNS server.
 The spark DNS data source uses zone transfers to retrieve data from DNS server. 
 It tries to use `IXFR` for every zone transfer though some DNS server implementation may return `AXFR` response.
 
