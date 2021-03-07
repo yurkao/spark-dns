@@ -1,9 +1,7 @@
 # Introduction
-Spark-DNS is Apache Spark data source for retrieving DNS `A` type records from DNS server.
-The spark DNS data source uses zone transfers to retrieve data from DNS server. 
-It tries to use `IXFR` for every zone transfer though some DNS server implementation may return `AXFR` response.
+Spark-DNS is Apache Spark data source for retrieving DNS `A` type records from DNS server by using zone transfers to retrieve data from DNS server. 
 
-The spark DNS data source may operate on multiple DNS zones in single data frame.
+The Spark DNS data source may operate on multiple DNS zones in single data frame.
 Due to nature of DNS zone transfer, data retrieval for single zone transfer cannot be done in parallel, 
 though data from multiple zones is retrieved in parallel (each DNS zone is handled in different Spark partition of RDD)
 
@@ -23,6 +21,8 @@ though data from multiple zones is retrieved in parallel (each DNS zone is handl
 | timeout | zone transfer timeout (in seconds) | 10 | N |
 | xfr | zone transfer type (case-insensitive): AXFR or IXFR | IXFR | N |
 | ignore-failures | if set to true, XFR errors will be ignored and no records will be returned. if set to false, exception will be thrown ion XFR failures: true or false | false | N |
+
+
 
 ## Schema
 ```
