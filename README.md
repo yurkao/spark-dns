@@ -20,7 +20,7 @@ though data from multiple zones is retrieved in parallel (each DNS zone is handl
 | zones | Comma separated list of DNS forward zones | N/A | Y |
 | timeout | zone transfer timeout (in seconds) | 10 | N |
 | xfr | zone transfer type (case-insensitive): AXFR or IXFR | IXFR | N |
-| ignore-failures | if set to true, XFR errors will be ignored and no records will be returned. if set to false, exception will be thrown ion XFR failures: true or false | false | N |
+| ignore-failures | if set to true, XFR errors will be ignored and no records will be returned. Values: true or false | false | N |
 
 
 
