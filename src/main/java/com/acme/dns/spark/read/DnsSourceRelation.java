@@ -1,4 +1,4 @@
-package com.acme.dns.spark;
+package com.acme.dns.spark.read;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

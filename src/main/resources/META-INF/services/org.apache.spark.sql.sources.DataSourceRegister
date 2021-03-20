@@ -1,1 +1,2 @@
-com.acme.dns.spark.DnsSourceRelationProvider
+com.acme.dns.spark.read.DnsSourceRelationProvider
+com.acme.dns.spark.write.DnsSinkRelationProvider

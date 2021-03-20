@@ -1,4 +1,4 @@
-package com.acme.dns.spark;
+package com.acme.dns.spark.read;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

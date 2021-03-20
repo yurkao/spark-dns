@@ -1,7 +1,7 @@
 package com.acme.dns.xfr;
 
 
-import com.acme.dns.spark.ZoneVersion;
+import com.acme.dns.spark.read.ZoneVersion;
 import com.google.common.base.Preconditions;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

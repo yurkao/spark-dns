@@ -9,14 +9,14 @@ import java.util.function.Function;
 @Slf4j
 @RequiredArgsConstructor
 
-public class RecordFactory implements Function<ARecord, OrgDnsRecord> {
+public class DnsChangeFactory implements Function<ARecord, DnsRecordChange> {
     private final DnsAction action;
 
 
     @Override
-    public OrgDnsRecord apply(ARecord record) {
+    public DnsRecordChange apply(ARecord record) {
 
-        final OrgDnsRecord dnsRecord = new OrgDnsRecord();
+        final DnsRecordChange dnsRecord = new DnsRecordChange();
         final String fqdn = record.getName().toString().toLowerCase();
         final String ip = record.getAddress().getHostAddress();
         dnsRecord.setIp(ip);

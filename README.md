@@ -10,7 +10,14 @@ though data from multiple zones is retrieved in parallel (each DNS zone is handl
 2. integrating Spark with 3rd party data sources
 3. Just for fun
 
-## Data source options
+
+## Building
+JDK 11 is required for building
+```
+./gradlew clean jar
+```
+## Reading data from DNS
+### Data source options
 | Option name | Description | default value | Required | 
 | ----------- | ----------- | ----------- | ----------- |
 | server | DNS server address (IP or fqdn) | N/A | Y |
@@ -23,8 +30,7 @@ though data from multiple zones is retrieved in parallel (each DNS zone is handl
 | ignore-failures | if set to true, XFR errors will be ignored and no records will be returned. Values: true or false | false | N |
 
 
-
-## Schema
+### Schema
 ```
 root
  |-- action: string (nullable = true)
@@ -44,21 +50,15 @@ root
 5. organization: organization name provided via data source options
 6. zone: DNS zone name the DNS record relates to
 
-## Building
-JDK 11 is required for building
-```
-./gradlew clean jar
-```
-
-## Usage examples
 ### Submitting application
 ```
 spark-submit --jars spark-dns-1.0.0.jar
 pyspark --jars spark-dns-1.0.0.jar
 ```
-### Spark API (PySpark)
+### Usage examples
+#### Spark API (PySpark)
 ```
->>> options = dict(server=10.0.0.1",
+>>> options = dict(server="10.0.0.1",
                port="53",
                zones="example.acme.,another.zone",
                organization="Acme Inc.",
@@ -67,13 +67,13 @@ pyspark --jars spark-dns-1.0.0.jar
                serial=1234567890)
 >>> spark.read.format("dns").options(**options).load().show(truncate=False)
 ```
-### Spark SQL
+#### Spark SQL
 ```
 >>> spark.sql("CREATE TABLE my_table USING dns OPTIONS (server='10.0.0.1', port=53, zones='example.acme,another.zone', serial=1234567890, organization='Acme Inc.'), xfr='AXFR', timeout='60'")
 >>> spark.sql("SELECT * FROM my_table").show(truncate=False)
 ```
-## Output example
-### Using xfr=axfr
+### Output example
+#### Using xfr=axfr
 ```
 +------+--------------------------+-------------+-----------------------+------------+-------------+
 |action|fqdn                      |ip           |timestamp              |organization|zone         |
@@ -95,7 +95,7 @@ pyspark --jars spark-dns-1.0.0.jar
 |AXFR  |workstation4.another.zone.|10.0.0.15    |2021-03-01 23:28:18.093|Acme Inc.   |another.zone |
 +------+--------------------------+-------------+-----------------------+------------+-------------+
 ```
-### Using xfr=ixfr
+#### Using xfr=ixfr
 ```
 +------------+--------------------------+-------------+-----------------------+------------+-------------+
 |action      |fqdn                      |ip           |timestamp              |organization|zone         |
@@ -103,6 +103,63 @@ pyspark --jars spark-dns-1.0.0.jar
 |IXFR_ADDED  |foo.example.acme.         |192.168.2.10 |2021-03-01 23:28:17.499|Acme Inc.   |example.acme.|
 |IXFR_DELETE |newhost1.another.zone.    |10.0.2.17    |2021-03-01 23:28:17.499|Acme Inc.   |another.zone.|
 +------------+--------------------------+-------------+-----------------------+------------+-------------+
+```
+## Updating DNS using Spark
+### Schema
+```
+root
+ |-- action: string (nullable = false)
+ |-- fqdn: string (nullable = false)
+ |-- ip: string (nullable = false)
+ |-- timestamp: timestamp (nullable = false)
+ |-- ttl: integer (nullable = false)
+```
+Note:
+1. The `action` field should have one of following values: IXFR_ADD/IXFR_DELETE.
+2. The `timestamp` field value indicates date+time of dns record update, e.g., 
+if there're multiple updates for same DNS record (`action`+`ip`+`fqdn`), the update with most recent `timestamp` value will be taken.
+
+### Data sink options
+| Option name | Description | default value | Required | 
+| ----------- | ----------- | ----------- | ----------- |
+| server | DNS server address (IP or fqdn) | N/A | Y |
+| port | DNS server TCP port for zone transfers | 53 | N |
+| timeout | zone transfer timeout (in seconds) | 10 | N |
+
+### Usage examples
+#### Spark API (PySpark)
+```
+>>> options = dict(server="10.0.0.1",
+               port="53",
+               timeout="60")
+>>> data.write.format("dns").options(**options).save()
+```
+Note: `data` DataFrame/Dataset should match the specified above schema:
+```
+root
+ |-- action: string (nullable = false)
+ |-- fqdn: string (nullable = false)
+ |-- ip: string (nullable = true)
+ |-- timestamp: timestamp (nullable = false)
+ |-- ttl: integer (nullable = false)
+
+```
+
+#### Spark SQL
+
+```
+>>> data.createTempView("data")
+>>> spark.sql("CREATE TABLE output USING dns_update OPTIONS (server='10.0.0.1', port=53, timeout=10)")
+>>> spark.sql("INSERT INTO output TABLE data")
+```
+Note: `data` DataFrame/Dataset should match the specified above schema:
+```
+root
+ |-- action: string (nullable = false)
+ |-- fqdn: string (nullable = false)
+ |-- ip: string (nullable = true)
+ |-- timestamp: timestamp (nullable = false)
+ |-- ttl: integer (nullable = false)
 ```
 
 ## Features and limitations
@@ -122,6 +179,7 @@ pyspark --jars spark-dns-1.0.0.jar
         - On Structured Streaming this may produce empty DataFrames on no updates
     - When using `xfr=axfr`, entire DNS zone `A` records will be returned
 7. Handling temporary failures during zone transfer (similar to `failOnDataLoss` in Spark+Kafka)
+8. Batch write support to send updates to DNS server: zone if derived from record/row FQDN
 
 ### Upcoming features
 1. Transaction signatures support for DNS zone transfers (aka TSIGs)

@@ -1,4 +1,4 @@
-package com.acme.dns.spark;
+package com.acme.dns.spark.read;
 
 import lombok.ToString;
 import org.apache.spark.util.AccumulatorV2;

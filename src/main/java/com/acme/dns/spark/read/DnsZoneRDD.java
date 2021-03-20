@@ -1,6 +1,6 @@
-package com.acme.dns.spark;
+package com.acme.dns.spark.read;
 
-import com.acme.dns.dao.OrgDnsRecord;
+import com.acme.dns.dao.DnsRecordChange;
 import com.acme.dns.xfr.Xfr;
 import com.acme.dns.xfr.XfrType;
 import lombok.SneakyThrows;
@@ -11,6 +11,7 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Row;
+import org.xbill.DNS.Name;
 import org.xbill.DNS.ZoneTransferException;
 import scala.collection.Iterator;
 import scala.collection.JavaConverters;
@@ -69,7 +70,8 @@ public class DnsZoneRDD extends RDD<Row> {
 
         final int timeout = globalDnsParams.getTimeout();
         final XfrType xfrType =  globalDnsParams.getXfrType();
-        final Xfr source = new Xfr(zoneInfo.getName(), zoneInfo.getServer(), zoneVersion, timeout, xfrType);
+        final Name dnsZone = zoneInfo.getName();
+        final Xfr source = new Xfr(dnsZone, zoneInfo.getServer(), zoneVersion, timeout, xfrType);
         final long serial;
         if (XfrType.AXFR.equals(xfrType)) {
             serial = 0L; // on AXFR we always want to get all DNS records
@@ -77,7 +79,7 @@ public class DnsZoneRDD extends RDD<Row> {
             serial = zoneInfo.getSerial();
         }
 
-        List<OrgDnsRecord> dnsRecords;
+        List<DnsRecordChange> dnsRecords;
         try {
             dnsRecords = source.fetch(serial);
         } catch (IOException | ZoneTransferException e) {
@@ -90,7 +92,7 @@ public class DnsZoneRDD extends RDD<Row> {
         }
 
         final Timestamp ts = new Timestamp(System.currentTimeMillis());
-        final DnsRecordToRowConverter rowConverter = new DnsRecordToRowConverter(ts, zoneInfo.getName().toString(), orgName);
+        final DnsRecordToRowConverter rowConverter = new DnsRecordToRowConverter(ts, dnsZone.toString(), orgName);
         return JavaConverters.asScalaIteratorConverter(dnsRecords.stream().map(rowConverter).iterator()).asScala();
     }
 

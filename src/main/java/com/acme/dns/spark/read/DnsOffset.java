@@ -1,4 +1,4 @@
-package com.acme.dns.spark;
+package com.acme.dns.spark.read;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +8,6 @@ import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.spark.sql.execution.streaming.Offset;
-
 import org.apache.spark.sql.execution.streaming.SerializedOffset;
 
 import java.io.IOException;

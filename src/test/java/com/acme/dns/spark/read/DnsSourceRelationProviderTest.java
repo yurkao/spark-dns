@@ -1,5 +1,6 @@
-package com.acme.dns;
+package com.acme.dns.spark.read;
 
+import com.acme.dns.spark.BindContainerFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FileSystem;
@@ -13,11 +14,8 @@ import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.sql.streaming.Trigger;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
 import java.util.*;
@@ -27,18 +25,14 @@ import static org.assertj.core.api.Assertions.*;
 
 @Slf4j
 class DnsSourceRelationProviderTest {
-    static final DockerImageName dockerImageName = DockerImageName.parse("internetsystemsconsortium/bind9:9.11");
+    static final BindContainerFactory CONTAINER_FACTORY = new BindContainerFactory();
     static SparkSession spark;
     static FileSystem fs;
     String checkpoint;
     String outputPath;
 
-    @SuppressWarnings("rawtypes")
     @Container
-    GenericContainer container = new GenericContainer(dockerImageName)
-            .withExposedPorts(53)
-            .withClasspathResourceMapping("bind", "/etc/bind/", BindMode.READ_ONLY)
-            .waitingFor(Wait.forListeningPort());
+    GenericContainer<?> container;
 
     Map<String, String> options;
     int xfrPort;
@@ -59,7 +53,7 @@ class DnsSourceRelationProviderTest {
     @SneakyThrows
     @BeforeEach
     void setUp() {
-        container.start();
+        container = CONTAINER_FACTORY.create();
         xfrPort = container.getMappedPort(53);
         xfrHost = container.getHost();
 
@@ -78,7 +72,7 @@ class DnsSourceRelationProviderTest {
         spark.sql("drop table if exists my_table");
         deleteDir(checkpoint);
         deleteDir(outputPath);
-        container.stop();
+        CONTAINER_FACTORY.stop(container);
     }
 
     private void deleteDir(final String location) throws IOException {
