@@ -1,5 +1,6 @@
 package com.acme.dns;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -12,6 +13,11 @@ import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.sql.streaming.Trigger;
 import org.junit.jupiter.api.*;
+import org.testcontainers.containers.BindMode;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
 import java.util.*;
@@ -21,15 +27,26 @@ import static org.assertj.core.api.Assertions.*;
 
 @Slf4j
 class DnsSourceRelationProviderTest {
+    static final DockerImageName dockerImageName = DockerImageName.parse("internetsystemsconsortium/bind9:9.11");
     static SparkSession spark;
     static FileSystem fs;
     String checkpoint;
     String outputPath;
 
-    Map<String, String> options;
+    @SuppressWarnings("rawtypes")
+    @Container
+    GenericContainer container = new GenericContainer(dockerImageName)
+            .withExposedPorts(53)
+            .withClasspathResourceMapping("bind", "/etc/bind/", BindMode.READ_ONLY)
+            .waitingFor(Wait.forListeningPort());
 
+    Map<String, String> options;
+    int xfrPort;
+    String xfrHost;
+
+    @SneakyThrows
     @BeforeAll
-    static void init() throws IOException {
+    static void init() {
         spark = SparkSession.builder().master("local").getOrCreate();
         fs = FileSystem.newInstance(spark.sparkContext().hadoopConfiguration());
     }
@@ -39,13 +56,18 @@ class DnsSourceRelationProviderTest {
         spark.close();
     }
 
+    @SneakyThrows
     @BeforeEach
     void setUp() {
+        container.start();
+        xfrPort = container.getMappedPort(53);
+        xfrHost = container.getHost();
+
         checkpoint = "./checkpoint-" + UUID.randomUUID();
         outputPath = "./output-" + UUID.randomUUID();
         options = new HashMap<>();
-        options.put("server", "10.0.0.1");
-        options.put("port", "53");
+        options.put("server", xfrHost);
+        options.put("port", String.valueOf(xfrPort));
         options.put("zones", "example.acme.,another.zone");
         options.put("organization", "Acme Inc.");
         options.put("xfr", "ixfr");
@@ -56,6 +78,7 @@ class DnsSourceRelationProviderTest {
         spark.sql("drop table if exists my_table");
         deleteDir(checkpoint);
         deleteDir(outputPath);
+        container.stop();
     }
 
     private void deleteDir(final String location) throws IOException {
@@ -82,7 +105,7 @@ class DnsSourceRelationProviderTest {
     void sqlBatchRead() {
         assertThatCode(() -> {
             spark.sql( "CREATE TABLE my_table USING dns " +
-                    "OPTIONS (server='10.0.0.1', port=53, zones='example.acme,another.zone', organization='Acme Inc.')");
+                    "OPTIONS (server='" + xfrHost + "', port=" + xfrPort + ", zones='example.acme,another.zone', organization='Acme Inc.')");
             spark.sql("DESC TABLE my_table").show();
             spark.sql("SELECT * FROM my_table").show(false);
         })
@@ -134,7 +157,8 @@ class DnsSourceRelationProviderTest {
 
         assertThatCode(() -> {
             spark.sql( "CREATE TABLE my_table USING dns " +
-                    "OPTIONS (server='10.0.0.1', port=22, zones='example.acme', timeout=2, organization='Acme Inc.', 'ignore-failures'='true')");
+                    "OPTIONS (server='"+ xfrHost +"', " +
+                    "port=1, zones='example.acme', timeout=2, organization='Acme Inc.', 'ignore-failures'='true')");
             spark.sql("SELECT * FROM my_table").show(false);
         })
                 .as("XFR failures should be suppressed")
@@ -146,7 +170,8 @@ class DnsSourceRelationProviderTest {
 
         assertThatThrownBy(() -> {
             spark.sql( "CREATE TABLE my_table USING dns " +
-                    "OPTIONS (server='10.0.0.1', port=22, zones='example.acme', timeout=2, organization='Acme Inc.', 'ignore-failures'='false')");
+                    "OPTIONS (server='"+ xfrHost +"', " +
+                    "port=1, zones='example.acme', timeout=2, organization='Acme Inc.', 'ignore-failures'='false')");
             spark.sql("SELECT * FROM my_table").show(false);
         })
                 .as("SQL Reading should fail if ignore failures is disabled")
