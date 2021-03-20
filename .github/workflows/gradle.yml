@@ -24,7 +24,7 @@ jobs:
 #          - 5353:53/udp
 #          - 5353:53/tcp
 
-    name: Java ${{ matrix.java }} sample
+    name: Java ${{ matrix.java }} build
 
     steps:
       - name: checkout
