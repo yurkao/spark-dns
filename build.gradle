@@ -20,31 +20,33 @@ test {
     testLogging.exceptionFormat = 'full'
 }
 
+apply from: "./3rdparties.gradle"
+
 dependencies {
 
-    compile group: 'dnsjava', name: 'dnsjava', version: "2.1.9"
+    compile group: "dnsjava", name: "dnsjava", version: "${versions.dnsjava}"
 
-    compileOnly group: 'org.apache.spark', name: 'spark-sql_2.12', version: "3.1.1"
-    compileOnly group: 'org.apache.spark', name: 'spark-core_2.12', version: "3.1.1"
+    compileOnly group: "org.apache.spark", name: "spark-sql_2.12", version: "${versions.spark}"
+    compileOnly group: "org.apache.spark", name: "spark-core_2.12", version: "${versions.spark}"
 
-    compileOnly "org.projectlombok:lombok:1.18.18"
-    annotationProcessor "org.projectlombok:lombok:1.18.18"
+    testCompile group: "org.apache.spark", name: "spark-sql_2.12", version: "${versions.spark}"
+    testCompile group: "org.apache.spark", name: "spark-core_2.12", version: "${versions.spark}"
 
-    testAnnotationProcessor "org.projectlombok:lombok:1.18.12"
-    testCompile "org.projectlombok:lombok:1.18.12"
-    testCompile group: 'org.assertj', name: 'assertj-core', version: "3.19.0"
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:' + "5.3.1"
-    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '3.8.0'
+    compileOnly "org.projectlombok:lombok:${versions.lombok}"
+    annotationProcessor "org.projectlombok:lombok:${versions.lombok}"
 
-    testRuntime 'org.junit.jupiter:junit-jupiter-engine:' + "5.3.1"
-    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: "5.7.1"
-    testCompile group: 'org.apache.spark', name: 'spark-sql_2.12', version: "3.1.1"
-    testCompile group: 'org.apache.spark', name: 'spark-core_2.12', version: "3.1.1"
-    def junitJupiterVersion = '5.4.2'
-    testCompile "org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion"
-    testCompile "org.junit.jupiter:junit-jupiter-params:$junitJupiterVersion"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion"
-    testCompile "org.testcontainers:testcontainers:1.15.2"
-    testCompile "org.testcontainers:junit-jupiter:1.15.2"
+    testCompileOnly "org.projectlombok:lombok:${versions.lombok}"
+    testAnnotationProcessor "org.projectlombok:lombok:${versions.lombok}"
+
+    testCompile group: "org.assertj", name: "assertj-core", version: "${versions.assertJ}"
+
+    testImplementation group: "org.junit.jupiter", name: "junit-jupiter-api", version: "${versions.junit5}"
+    testRuntime group: "org.junit.jupiter", name: "junit-jupiter-engine", version: "${versions.junit5}"
+    testCompile group: "org.junit.jupiter", name: "junit-jupiter-api", version: "${versions.junitJupiter}"
+    testCompile group: "org.junit.jupiter", name: "junit-jupiter-params", version: "${versions.junitJupiter}"
+    testRuntimeOnly group: "org.junit.jupiter", name: "junit-jupiter-engine", version: "${versions.junitJupiter}"
+
+    testCompile group: "org.testcontainers", name: "testcontainers", version: "${versions.testContainers}"
+    testCompile group: "org.testcontainers", name: "junit-jupiter", version: "${versions.testContainers}"
 
 }
