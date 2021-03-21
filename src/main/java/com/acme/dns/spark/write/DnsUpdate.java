@@ -7,6 +7,8 @@ import org.xbill.DNS.*;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -27,7 +29,7 @@ public class DnsUpdate {
     public DnsUpdate(String dnsServerAddress, int port, int timeout) throws UnknownHostException {
         resolver = new SimpleResolver(dnsServerAddress);
 
-        resolver.setTimeout(timeout);
+        resolver.setTimeout(Duration.of(timeout, ChronoUnit.SECONDS));
         resolver.setTCP(true);
         resolver.setPort(port);
         if(log.isDebugEnabled()) {

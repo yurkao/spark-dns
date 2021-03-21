@@ -20,6 +20,11 @@ test {
     testLogging.exceptionFormat = 'full'
 }
 
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:unchecked'
+    options.deprecation = true
+}
+
 apply from: "./3rdparties.gradle"
 
 dependencies {
@@ -32,11 +37,11 @@ dependencies {
     testCompile group: "org.apache.spark", name: "spark-sql_2.12", version: "${versions.spark}"
     testCompile group: "org.apache.spark", name: "spark-core_2.12", version: "${versions.spark}"
 
-    compileOnly "org.projectlombok:lombok:${versions.lombok}"
-    annotationProcessor "org.projectlombok:lombok:${versions.lombok}"
+    compileOnly group: "org.projectlombok", name: "lombok", version: "${versions.lombok}"
+    annotationProcessor group: "org.projectlombok", name: "lombok", version: "${versions.lombok}"
 
-    testCompileOnly "org.projectlombok:lombok:${versions.lombok}"
-    testAnnotationProcessor "org.projectlombok:lombok:${versions.lombok}"
+    testCompileOnly group: "org.projectlombok", name: "lombok", version: "${versions.lombok}"
+    testAnnotationProcessor group: "org.projectlombok", name: "lombok", version: "${versions.lombok}"
 
     testCompile group: "org.assertj", name: "assertj-core", version: "${versions.assertJ}"
 

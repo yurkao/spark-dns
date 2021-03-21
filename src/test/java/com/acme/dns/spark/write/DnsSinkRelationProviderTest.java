@@ -15,6 +15,8 @@ import org.xbill.DNS.*;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 
@@ -44,7 +46,7 @@ class DnsSinkRelationProviderTest {
         xfrHost = container.getHost();
         resolver = new SimpleResolver(xfrHost);
 
-        resolver.setTimeout(10);
+        resolver.setTimeout(Duration.of(10, ChronoUnit.SECONDS));
         resolver.setTCP(true);
         resolver.setPort(xfrPort);
         if(log.isDebugEnabled()) {

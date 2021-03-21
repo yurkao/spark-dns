@@ -96,6 +96,33 @@ class DnsSourceRelationProviderTest {
     }
 
     @Test
+    void sparkBatchReadTimeoutNoIgnoreFailures() {
+        options.put("ignore-failures", "false");
+        options.put("timeout", "0");
+        assertThatThrownBy(() -> {
+            final Dataset<Row> df = spark.read().format("dns").options(options).load().persist();
+            log.info("Schema: {}", df.schema().treeString());
+            log.info("Rows: {}", df.count());
+            df.show(false);
+        })
+                .as("On timeout, Spark should fail")
+                .isInstanceOf(SparkException.class);
+    }
+
+    @Test
+    void sparkBatchReadTimeoutIgnoreFailures() {
+        options.put("ignore-failures", "true");
+        options.put("timeout", "0");
+        assertThatCode(() -> {
+            final Dataset<Row> df = spark.read().format("dns").options(options).load().persist();
+            log.info("Schema: {}", df.schema().treeString());
+            log.info("Rows: {}", df.count());
+            df.show(false);
+        })
+                .as("On timeout and ignore-failures, Spark must not fail (empty dataset should be returned)")
+                .doesNotThrowAnyException();
+    }
+    @Test
     void sqlBatchRead() {
         assertThatCode(() -> {
             spark.sql( "CREATE TABLE my_table USING dns " +

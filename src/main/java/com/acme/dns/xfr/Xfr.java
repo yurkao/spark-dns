@@ -10,6 +10,8 @@ import org.xbill.DNS.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -35,7 +37,7 @@ public class Xfr {
     public List<DnsRecordChange> fetch(long serial) throws IOException, ZoneTransferException {
         log.info("Polling {} DNS zone with initial serial {} and timeout {}", zoneName, serial, timeout);
         final ZoneTransferIn xfr = ZoneTransferIn.newIXFR(zoneName, serial, false, dnsServer, null);
-        xfr.setTimeout(timeout);
+        xfr.setTimeout(Duration.of(timeout, ChronoUnit.SECONDS));
         xfr.run(handler);
         final XfrType resultXfrType;
         if (serial==0) {
