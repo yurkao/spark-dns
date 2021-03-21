@@ -52,6 +52,11 @@ public class DnsUpdate {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
+        if (chronoUpdates.isEmpty()) {
+            // avoid network IO on empty updates
+            log.info("No DNS updates for {} zone", zone);
+            return;
+        }
         log.info("Updating DNS zone {} in {} with {} updates", zone, resolver.getAddress(), chronoUpdates.size());
         if (log.isDebugEnabled()) {
             chronoUpdates.forEach(update -> log.debug("\t{}", update));
