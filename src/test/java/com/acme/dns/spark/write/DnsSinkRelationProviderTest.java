@@ -5,10 +5,12 @@ import com.acme.dns.dao.DnsRecordUpdate;
 import com.acme.dns.spark.BindContainerFactory;
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.spark.api.java.function.VoidFunction2;
 import org.apache.spark.sql.*;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.apache.spark.sql.streaming.StreamingQuery;
+import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.xbill.DNS.*;
@@ -17,8 +19,10 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import static com.acme.dns.spark.BindContainerFactory.deleteBindJournal;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -30,6 +34,8 @@ class DnsSinkRelationProviderTest {
     static final String OUTPUT_TABLE_NAME = "output";
     static final BindContainerFactory CONTAINER_FACTORY = new BindContainerFactory();
 
+    static FileSystem fs;
+
     @Container
     GenericContainer<?> container;
 
@@ -37,6 +43,19 @@ class DnsSinkRelationProviderTest {
     SimpleResolver resolver;
     int xfrPort;
     String xfrHost;
+    String checkpoint;
+    String dataPath;
+
+
+    @BeforeAll
+    static void init() throws IOException {
+        fs = FileSystem.newInstance(spark.sparkContext().hadoopConfiguration());
+    }
+
+    @AfterAll
+    static void cleanup() throws IOException {
+        fs.close();
+    }
 
     @BeforeEach
     void setUp() throws IOException, URISyntaxException {
@@ -52,15 +71,27 @@ class DnsSinkRelationProviderTest {
         if(log.isDebugEnabled()) {
             Options.set("verbose");
         }
+        dataPath = "dns-updates-" + UUID.randomUUID();
+        checkpoint = "checkpoints-" + UUID.randomUUID();
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws IOException, URISyntaxException {
         CONTAINER_FACTORY.stop(container);
         spark.catalog().dropTempView(GENERATED_DATA_VIEW_NAME);
         spark.sql("DROP TABLE IF EXISTS " + OUTPUT_TABLE_NAME);
+        deleteDir(dataPath);
+        deleteDir(checkpoint);
+        deleteBindJournal();
     }
 
+    private void deleteDir(final String location) throws IOException {
+        final Path path = new Path(location);
+        if (!fs.exists(path)) {
+            return;
+        }
+        fs.delete(path, true);
+    }
 
     @Test
     void write() throws TextParseException {
@@ -76,6 +107,57 @@ class DnsSinkRelationProviderTest {
                 .as("DNS update should succeed")
                 .doesNotThrowAnyException();
         validateUpdates(data);
+    }
+
+    @Test
+    void writeStreamForeachBatch() throws TextParseException {
+        final Dataset<Row> data = createData();
+        data.write().parquet(dataPath);
+        assertThatCode(() -> {
+            final StreamingQuery query = spark.readStream().format("parquet").schema(data.schema()).load(dataPath)
+                    .writeStream()
+                    .option("checkpointLocation", checkpoint)
+                    .foreachBatch((VoidFunction2<Dataset<Row>, Long>) (batchDf, batchId) -> batchDf.write()
+                            .format("dns_update")
+                            .option("server", xfrHost)
+                            .option("port", xfrPort)
+                            .option("timeout", 5)
+                            .save())
+                    .start();
+            query.awaitTermination(Duration.of(10, ChronoUnit.SECONDS).toMillis());
+            if (query.isActive()) {
+                query.stop();
+            }
+
+        }).doesNotThrowAnyException();
+        validateUpdates(data);
+    }
+
+    @Test
+    void writeStream() throws TextParseException {
+        final Dataset<Row> data = createData();
+        data.write().parquet(dataPath);
+        final Dataset<Row> updates = spark.readStream().format("parquet").schema(data.schema()).load(dataPath);
+        final Column jsonStruct = functions.struct(Arrays.stream(data.columns()).map(Column::new).toArray(Column[]::new));
+
+        assertThatCode(() -> {
+            final StreamingQuery query = updates
+                    .withColumn("update", functions.to_json(jsonStruct))
+                    .select("update")
+                    .writeStream().format("dns_update")
+                    .option("server", xfrHost)
+                    .option("port", xfrPort)
+                    .option("timeout", 5)
+                    .option("checkpointLocation", checkpoint)
+                    .start();
+                query.awaitTermination(Duration.of(10, ChronoUnit.SECONDS).toMillis());
+                if (query.isActive()) {
+                    query.stop();
+                }
+
+        }).doesNotThrowAnyException();
+        validateUpdates(data);
+
     }
 
     @Test

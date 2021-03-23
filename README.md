@@ -7,15 +7,21 @@ though data from multiple zones is retrieved in parallel (each DNS zone is handl
 
 # Rationale
 1. Learning Spark internals
-2. integrating Spark with 3rd party data sources
-3. Just for fun
-
+2. Just for fun
+3. Demo of how to implement Spark custom data source that does not support data polling from backing storage and/or have data with size that cannot be known without fetching entire data from backing storage
 
 ## Building
 JDK 11 is required for building
 ```
 ./gradlew clean jar
 ```
+
+### Submitting application
+```
+spark-submit --jars spark-dns-1.0.0.jar
+pyspark --jars spark-dns-1.0.0.jar
+```
+
 ## Reading data from DNS
 ### Data source options
 | Option name | Description | default value | Required | 
@@ -50,11 +56,6 @@ root
 5. organization: organization name provided via data source options
 6. zone: DNS zone name the DNS record relates to
 
-### Submitting application
-```
-spark-submit --jars spark-dns-1.0.0.jar
-pyspark --jars spark-dns-1.0.0.jar
-```
 ### Usage examples
 #### Spark API (PySpark)
 ```
@@ -105,7 +106,7 @@ pyspark --jars spark-dns-1.0.0.jar
 +------------+--------------------------+-------------+-----------------------+------------+-------------+
 ```
 ## Updating DNS using Spark
-### Schema
+### Required data schema
 ```
 root
  |-- action: string (nullable = false)
@@ -161,18 +162,37 @@ root
  |-- timestamp: timestamp (nullable = false)
  |-- ttl: integer (nullable = false)
 ```
+#### Streaming write
+When using Structured streaming write, each update/row should be "packed" as JSON to new column named "update" as shown below
+```
+>>> data = spark.readStream...load()
+>>> data.printSchema()
+root
+ |-- action: string (nullable = false)
+ |-- fqdn: string (nullable = false)
+ |-- ip: string (nullable = true)
+ |-- timestamp: timestamp (nullable = false)
+ |-- ttl: integer (nullable = false)
+
+>>> updates = data.withColumn("update", F.to_json(F.struct(data.schema.fieldNames())))
+>>> options = dict(server="10.0.0.1",
+               port="53",
+               timeout="60")
+>>> data.writeStream.format("dns_updates").options(**options).option("checkpointLocation", "...").start()
+
+```
 
 ## Features and limitations
 ### Limitations
 1. Providing multiple DNS servers in options for same the same dataset/table is currently not supported
-2. Continuous Structured Streaming is not supported yet
+2. Continuous Structured Streaming writing is not supported yet
 3. On Spark 2.4 (incl CDH 6.3.x) only batch reading is supported.
 
 ### Currently implemented features
 1. Spark batch read
 2. Retrieving DNS `A` records from multiple DNS zone (though from single DNS server)
 3. New DNS SOA serial of DNS zone is available in Accumulator via Spark UI (refer to relevant stage)
-4. Spark Structured Streaming read support (Only trigger Once and Prcessing time is supported)
+4. Spark Structured Streaming read support (Only trigger Once and ProcessingTime are supported)
 5. Zone transfer timeout
 6. Specifying explicit zone transfer type (AXFR/IXFR) to use when retrieving data from DNS server. 
     - When suing `xfr=ixfr`, only DNS zone updates from initial serial will be returned. 
@@ -180,6 +200,7 @@ root
     - When using `xfr=axfr`, entire DNS zone `A` records will be returned
 7. Handling temporary failures during zone transfer (similar to `failOnDataLoss` in Spark+Kafka)
 8. Batch write support to send updates to DNS server: zone if derived from record/row FQDN
+9. Structured Streaming write support (Dataset::writeStream)
 
 ### Upcoming features
 1. Transaction signatures support for DNS zone transfers (aka TSIGs)
@@ -187,8 +208,8 @@ root
 # Tested on
 | Spark version | JDK | DNS servers | 
 | ----------- | ----------- | ----------- |
-| Official 3.0.1 (2.12)  | AdoptedJdk 11 | Bind9, Windows DNS |
-| Official 3.0.1 (2.12) | AdoptedJdk 11 | Bind9, Windows DNS | 
+| Official 3.0.1 (2.12) | AdoptedJdk 11 | Bind9, Windows DNS |
+| Official 3.1.1 (2.12) | AdoptedJdk 11 | Bind9, Windows DNS | 
 
 # Links
 1. https://www.debian.org/doc/manuals/network-administrator/ch-bind.html DNS server setup 
