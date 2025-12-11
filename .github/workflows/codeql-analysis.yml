@@ -30,16 +30,16 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
+          queries: +security-extended
           languages: ${{ matrix.language }}
+          build-mode: manual
 
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Run
-        run: ./gradlew -x clean jar test
+      - name: Run build
+        run: |
+          chmod +x gradlew
+          ./gradlew -x clean jar test
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         with:
-          category: "/language:${{matrix.language}}"
+          category: "/language:${{ matrix.language }}"
