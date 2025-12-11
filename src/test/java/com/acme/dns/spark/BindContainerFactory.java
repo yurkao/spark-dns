@@ -57,10 +57,10 @@ public class BindContainerFactory {
 
     @SneakyThrows
     public void stop(GenericContainer<?> container) {
-        if (log.isTraceEnabled()) {
-            log.info("Container logs: {}", container.getLogs());
-        }
         if (container != null) {
+            if (log.isTraceEnabled()) {
+                log.info("Container logs: {}", container.getLogs());
+            }
             container.stop();
         }
         deleteBindJournal();
