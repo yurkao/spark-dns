@@ -31,7 +31,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           config-file: .github/codeql/codeql-config.yml
-          build-mode: manual
+          build-mode: none
 
       - name: Run build without tests
         run: |
