@@ -1,6 +1,7 @@
 package com.acme.dns.spark.read;
 
 import com.acme.dns.spark.BindContainerFactory;
+import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FileSystem;

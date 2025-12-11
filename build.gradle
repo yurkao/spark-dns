@@ -15,51 +15,66 @@ repositories {
 }
 
 test {
+    //required for Spark 3.x на Java 9+ (11, 17 и т.д.)
+    jvmArgs([
+        '--add-opens=java.base/java.nio=ALL-UNNAMED',
+        '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+        '--add-opens=java.base/java.util=ALL-UNNAMED',
+    ])
     useJUnitPlatform()
     testLogging.showStandardStreams = true
     testLogging.exceptionFormat = 'full'
 }
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-Xlint:unchecked'
     options.deprecation = true
 }
 ext {
     versions = [
-    		 spark: "3.1.1",
-    		 lombok: "1.18.16",
-    		 junit5: "5.3.1",
-    		 junitJupiter: "5.4.2",
-    		 testContainers: "1.15.2",
-    		 assertJ: "3.19.0",
-    		 dnsjava: "3.3.1"
+         spark: "3.5.7",
+         lombok: "1.18.42",
+         junit5: "6.0.1",
+         junitJupiter: "6.0.1",
+         testContainers: "1.21.3",
+         assertJ: "3.19.0",
+         dnsjava: "3.6.0",
     ]
 }
 dependencies {
 
-    compile group: "dnsjava", name: "dnsjava", version: "${versions.dnsjava}"
+    // 1. dnsjava
+    compileOnly "dnsjava:dnsjava:${versions.dnsjava}"
+    testImplementation "dnsjava:dnsjava:${versions.dnsjava}"
 
-    compileOnly group: "org.apache.spark", name: "spark-sql_2.12", version: "${versions.spark}"
-    compileOnly group: "org.apache.spark", name: "spark-core_2.12", version: "${versions.spark}"
+    // 2. Apache Spark (spark-sql, spark-core)
+    compileOnly "org.apache.spark:spark-sql_2.12:${versions.spark}"
+    compileOnly "org.apache.spark:spark-core_2.12:${versions.spark}"
 
-    testCompile group: "org.apache.spark", name: "spark-sql_2.12", version: "${versions.spark}"
-    testCompile group: "org.apache.spark", name: "spark-core_2.12", version: "${versions.spark}"
+    testImplementation "org.apache.spark:spark-sql_2.12:${versions.spark}"
+    testImplementation "org.apache.spark:spark-core_2.12:${versions.spark}"
 
-    compileOnly group: "org.projectlombok", name: "lombok", version: "${versions.lombok}"
-    annotationProcessor group: "org.projectlombok", name: "lombok", version: "${versions.lombok}"
+    // 3. Lombok
+    compileOnly "org.projectlombok:lombok:${versions.lombok}"
+    annotationProcessor "org.projectlombok:lombok:${versions.lombok}"
 
-    testCompileOnly group: "org.projectlombok", name: "lombok", version: "${versions.lombok}"
-    testAnnotationProcessor group: "org.projectlombok", name: "lombok", version: "${versions.lombok}"
+    testCompileOnly "org.projectlombok:lombok:${versions.lombok}"
+    testAnnotationProcessor "org.projectlombok:lombok:${versions.lombok}"
 
-    testCompile group: "org.assertj", name: "assertj-core", version: "${versions.assertJ}"
+    // 4. AssertJ
+    testImplementation "org.assertj:assertj-core:${versions.assertJ}"
 
-    testImplementation group: "org.junit.jupiter", name: "junit-jupiter-api", version: "${versions.junit5}"
-    testRuntime group: "org.junit.jupiter", name: "junit-jupiter-engine", version: "${versions.junit5}"
-    testCompile group: "org.junit.jupiter", name: "junit-jupiter-api", version: "${versions.junitJupiter}"
-    testCompile group: "org.junit.jupiter", name: "junit-jupiter-params", version: "${versions.junitJupiter}"
-    testRuntimeOnly group: "org.junit.jupiter", name: "junit-jupiter-engine", version: "${versions.junitJupiter}"
+    // 5. JUnit
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit5}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}"
 
-    testCompile group: "org.testcontainers", name: "testcontainers", version: "${versions.testContainers}"
-    testCompile group: "org.testcontainers", name: "junit-jupiter", version: "${versions.testContainers}"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junitJupiter}"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${versions.junitJupiter}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junitJupiter}"
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // 6. TestContainers
+    testImplementation "org.testcontainers:testcontainers:${versions.testContainers}"
+    testImplementation "org.testcontainers:junit-jupiter:${versions.testContainers}"
 }

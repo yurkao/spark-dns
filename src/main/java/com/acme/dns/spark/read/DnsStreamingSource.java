@@ -3,13 +3,9 @@ package com.acme.dns.spark.read;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.*;
 import org.apache.spark.sql.catalyst.expressions.AttributeReference;
+import org.apache.spark.sql.execution.CommandExecutionMode;
 import org.apache.spark.sql.execution.QueryExecution;
 import org.apache.spark.sql.execution.datasources.LogicalRelation;
 import org.apache.spark.sql.execution.streaming.Offset;
@@ -18,13 +14,16 @@ import org.apache.spark.sql.sources.BaseRelation;
 import org.apache.spark.sql.types.StructType;
 import scala.Option;
 import scala.collection.Seq;
+// For empty Seq/List for qualifiers
 
+import java.util.stream.Collectors;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import static com.acme.dns.spark.read.SchemaConverterFullParams.convertStructTypeToAttributesFull;
 
 @ToString(onlyExplicitlyIncluded=true)
 @Slf4j
@@ -94,17 +93,17 @@ public class DnsStreamingSource implements Source {
         });
         final BaseRelation relation = new DnsSourceRelation(sqlContext, batchParams, globalDnsParams);
 
-        final Seq<AttributeReference> attributeReferenceSeq = relation.schema().toAttributes();
+        final Seq<AttributeReference> attributeReferenceSeq = convertStructTypeToAttributesFull(relation.schema());
         final LogicalRelation plan = new LogicalRelation(relation, attributeReferenceSeq, Option.empty(), true);
 
         final SparkSession spark = sqlContext.sparkSession();
-        final QueryExecution queryExecution = spark.sessionState().executePlan(plan);
+        final QueryExecution queryExecution = spark.sessionState().executePlan(plan,             CommandExecutionMode.ALL());
         final StructType schema = queryExecution.analyzed().schema();
 
-        final ExpressionEncoder<Row> rowExpressionEncoder = RowEncoder.apply(schema);
+        final Encoder<Row> rowEncoder = Encoders.row(schema);
         log.info("--------- getBatch #{} done ------------", batchId);
         batchId++;
-        return new Dataset<>(spark, plan, rowExpressionEncoder);
+        return new Dataset<>(spark, plan, rowEncoder);
     }
 
     /**
