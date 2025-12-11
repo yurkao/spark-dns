@@ -49,7 +49,7 @@ class DnsSourceRelationProviderTest {
 
     @AfterAll
     static void cleanup() {
-        // spark.close();
+        spark.close();
     }
 
     @SneakyThrows
