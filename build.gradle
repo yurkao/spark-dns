@@ -15,6 +15,13 @@ repositories {
 }
 
 test {
+    //required for Spark 3.x на Java 9+ (11, 17 и т.д.)
+    jvmArgs([
+        '--add-opens=java.base/java.nio=ALL-UNNAMED',
+        '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+        '--add-opens=java.base/java.util=ALL-UNNAMED',
+    ])
     useJUnitPlatform()
     testLogging.showStandardStreams = true
     testLogging.exceptionFormat = 'full'
