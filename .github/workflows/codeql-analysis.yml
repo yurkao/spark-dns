@@ -10,7 +10,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  security-events: read
+  security-events: write
 
 jobs:
   analyze:
