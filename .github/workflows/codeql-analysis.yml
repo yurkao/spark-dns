@@ -34,10 +34,10 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: manual
 
-      - name: Run build
+      - name: Run build without tests
         run: |
           chmod +x gradlew
-          ./gradlew clean jar
+          ./gradlew -x test clean jar
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
