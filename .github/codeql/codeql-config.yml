@@ -2,7 +2,8 @@ queries:
   - uses: github/codeql/java-queries@v2
 
 paths:
-  - src/java
+  - src/main/java
+  - src/test/java
 
 autobuild: false
 
