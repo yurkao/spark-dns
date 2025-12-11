@@ -3,7 +3,6 @@ queries:
 
 paths:
   - src/java
-  - !tests
 
 autobuild: false
 
