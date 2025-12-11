@@ -1,0 +1,13 @@
+queries:
+  - uses: github/codeql/java-queries@v2
+
+paths:
+  include:
+    - src/java
+  exclude:
+    - tests
+
+autobuild: false
+
+build:
+  command: ./gradlew -x test build
