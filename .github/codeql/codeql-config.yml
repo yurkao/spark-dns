@@ -1,5 +1,5 @@
 queries:
-  - uses: github/codeql/java-queries@v2
+  - uses: security-and-quality
 
 paths:
   - src/main/java
