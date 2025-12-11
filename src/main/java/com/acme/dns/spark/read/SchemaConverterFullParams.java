@@ -44,17 +44,4 @@ public class SchemaConverterFullParams {
         return JavaConverters.asScalaBuffer(attributes).toSeq();
     }
 
-    // Example usage
-    public static void main(String[] args) {
-        StructType schema = new StructType()
-                .add("id", DataTypes.IntegerType, true)
-                .add("name", DataTypes.StringType, false);
-
-        Seq<AttributeReference> attributesSeq = convertStructTypeToAttributesFull(schema);
-
-        System.out.println("Converted Seq<AttributeReference> using 6 parameters:");
-        JavaConverters.seqAsJavaList(attributesSeq).forEach(attr ->
-                System.out.println(" - Name: " + attr.name() + ", ExprId: " + attr.exprId() + ", Qualifier: " + attr.qualifier())
-        );
-    }
 }
