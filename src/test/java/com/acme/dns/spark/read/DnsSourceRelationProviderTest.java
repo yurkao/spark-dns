@@ -26,11 +26,12 @@ import static org.assertj.core.api.Assertions.*;
 @Slf4j
 class DnsSourceRelationProviderTest {
     static final BindContainerFactory CONTAINER_FACTORY = new BindContainerFactory();
-    public static final int DNS_PORT = 15353;
+    public static final int DNS_PORT = 53;
     static SparkSession spark;
     static FileSystem fs;
     String checkpoint;
     String outputPath;
+    int xfrPort;
 
     @Container
     GenericContainer<?> container;
@@ -53,15 +54,14 @@ class DnsSourceRelationProviderTest {
     @SneakyThrows
     @BeforeEach
     void setUp() {
-        container = CONTAINER_FACTORY.create(DNS_PORT);
-//        xfrPort = container.getMappedPort(DNS_PORT);
+        container = CONTAINER_FACTORY.create();
         xfrHost = container.getHost();
-
+        xfrPort = container.getMappedPort(DNS_PORT);
         checkpoint = "./checkpoint-" + UUID.randomUUID();
         outputPath = "./output-" + UUID.randomUUID();
         options = new HashMap<>();
         options.put("server", xfrHost);
-        options.put("port", String.valueOf(DNS_PORT));
+        options.put("port", String.valueOf(xfrPort));
         options.put("zones", "example.acme.,another.zone");
         options.put("organization", "Acme Inc.");
         options.put("xfr", "ixfr");
@@ -129,7 +129,7 @@ class DnsSourceRelationProviderTest {
     void sqlBatchRead() {
         assertThatCode(() -> {
             spark.sql( "CREATE TABLE my_table USING dns " +
-                    "OPTIONS (server='" + xfrHost + "', port=" + DNS_PORT + ", zones='example.acme,another.zone', organization='Acme Inc.')");
+                    "OPTIONS (server='" + xfrHost + "', port=" + xfrPort + ", zones='example.acme,another.zone', organization='Acme Inc.')");
             spark.sql("DESC TABLE my_table").show();
             spark.sql("SELECT * FROM my_table").show(false);
         })

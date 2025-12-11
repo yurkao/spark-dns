@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Slf4j
 class DnsUpdateTest {
-    public static final int DNS_PORT = 15353;
+    public static final int DNS_PORT = 53;
     static final BindContainerFactory CONTAINER_FACTORY = new BindContainerFactory();
 
     @Container
@@ -31,7 +31,7 @@ class DnsUpdateTest {
     @SneakyThrows
     @BeforeEach
     void setUp() {
-        container = CONTAINER_FACTORY.create(DNS_PORT);
+        container = CONTAINER_FACTORY.create();
     }
 
     @AfterEach
@@ -49,7 +49,7 @@ class DnsUpdateTest {
         change.setIp("127.0.0.1");
         change.setFqdn("foo." + zoneName);
         change.setTtl(1234);
-        final DnsUpdate dnsUpdate = new DnsUpdate(container.getHost(), container.getFirstMappedPort());
+        final DnsUpdate dnsUpdate = new DnsUpdate(container.getHost(), container.getMappedPort(DNS_PORT));
         final Name zone = Name.fromString(zoneName);
         final Set<DnsRecordUpdate> updates = Collections.singleton(change);
         assertThatCode(() -> dnsUpdate.update(zone, updates))
