@@ -4,6 +4,19 @@ updates:
     directory: "/" 
     schedule:
       interval: "daily"
+    ignore:  # ignore transitive dependencies with known issues
+      - dependency-name: "org.apache.zookeeper:zookeeper"
+        versions:
+          - "3.6.3"
+      - dependency-name: "com.google.guava:guava"
+        versions:
+          - "16.0.1"
+      - dependency-name: "org.lz4:lz4-java"
+        versions:
+          - "1.8.0"
+      - dependency-name: "org.apache.ivy:ivy"
+        versions:
+          - "2.5.1"
   - package-ecosystem: "docker"
     # The directory containing the Dockerfile (root directory is "/")
     directory: "/src/test/resources"
