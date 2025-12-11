@@ -48,9 +48,9 @@ public class BindContainerFactory {
      */
     private static @NotNull List<String> createPortBindings(final int port) {
         return Arrays.asList(
-                // UDP: 5353:53/udp
+                // UDP: <external>:53/udp
                 String.format("%d:%d/%s", port, INTERNAL_DNS_PORT, InternetProtocol.UDP),
-                // TCP: 5353:53/tcp
+                // TCP: <external>:53/tcp
                 String.format("%d:%d/%s", port, INTERNAL_DNS_PORT, InternetProtocol.TCP)
         );
     }
