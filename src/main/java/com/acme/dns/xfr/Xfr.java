@@ -6,7 +6,12 @@ import com.acme.dns.dao.DnsChangeFactory;
 import com.acme.dns.dao.DnsRecordChange;
 import com.acme.dns.spark.read.ZoneVersion;
 import lombok.extern.slf4j.Slf4j;
-import org.xbill.DNS.*;
+import org.xbill.DNS.ARecord;
+import org.xbill.DNS.Name;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.Type;
+import org.xbill.DNS.ZoneTransferIn;
+import org.xbill.DNS.ZoneTransferException;
 
 import java.io.IOException;
 import java.net.SocketAddress;
