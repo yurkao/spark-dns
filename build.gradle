@@ -38,16 +38,15 @@ ext {
          junit5: "6.0.1",
          junitJupiter: "6.0.1",
          testContainers: "1.21.3",
-    		 assertJ: "3.27.6",
-         dnsjava: "3.6.0",
+    	 assertJ: "3.27.6",
+         dnsjava: "3.6.3",
     ]
 }
 dependencies {
 
     // 1. dnsjava
-    compileOnly "dnsjava:dnsjava:${versions.dnsjava}"
-    testImplementation "dnsjava:dnsjava:${versions.dnsjava}"
-
+    implementation("dnsjava:dnsjava:${versions.dnsjava}")
+    testImplementation("dnsjava:dnsjava:${versions.dnsjava}")
     // 2. Apache Spark (spark-sql, spark-core)
     compileOnly "org.apache.spark:spark-sql_2.12:${versions.spark}"
     compileOnly "org.apache.spark:spark-core_2.12:${versions.spark}"
