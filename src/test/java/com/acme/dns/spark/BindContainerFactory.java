@@ -41,7 +41,7 @@ public class BindContainerFactory {
     }
 
     /**
-     * Create DNS docker port bindings (CP and UDP) to avoid listening on privileged port under ono-privileged user
+     * Create DNS docker port bindings (CP and UDP) to avoid listening on privileged port under non-privileged user
      *
      * @param port non-privileged port to bind service port to,
      * @return list of port bindings.
