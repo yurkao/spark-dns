@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.*;
 
 import java.io.IOException;
@@ -95,9 +96,7 @@ public class ProgressSerDe {
         }
         final String content;
         try (final FSDataInputStream inputStream = fs.open(progressPath)) {
-
-            byte[] bytes = inputStream.readAllBytes();
-            content = new String(bytes, StandardCharsets.UTF_8);
+            content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         }
         final TypeReference<Map<String, Long>> typeRef = new TypeReference<>() {};
         return mapper.readValue(content, typeRef);
