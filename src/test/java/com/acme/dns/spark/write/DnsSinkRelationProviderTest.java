@@ -38,6 +38,7 @@ class DnsSinkRelationProviderTest {
     static final String GENERATED_DATA_VIEW_NAME = "data";
     static final String OUTPUT_TABLE_NAME = "output";
     static final BindContainerFactory CONTAINER_FACTORY = new BindContainerFactory();
+    public static final int DNS_PORT = 15353;
 
     static FileSystem fs;
 
@@ -46,7 +47,6 @@ class DnsSinkRelationProviderTest {
 
     // DNS tst resolver to validate updated records
     SimpleResolver resolver;
-    int xfrPort;
     String xfrHost;
     String checkpoint;
     String dataPath;
@@ -65,14 +65,13 @@ class DnsSinkRelationProviderTest {
     @BeforeEach
     void setUp() throws IOException, URISyntaxException {
         deleteBindJournal();
-        container = CONTAINER_FACTORY.create();
-        xfrPort = container.getMappedPort(53);
+        container = CONTAINER_FACTORY.create(DNS_PORT);
         xfrHost = container.getHost();
         resolver = new SimpleResolver(xfrHost);
 
         resolver.setTimeout(Duration.of(10, ChronoUnit.SECONDS));
         resolver.setTCP(true);
-        resolver.setPort(xfrPort);
+        resolver.setPort(DNS_PORT);
         if(log.isDebugEnabled()) {
             Options.set("verbose");
         }
@@ -105,7 +104,7 @@ class DnsSinkRelationProviderTest {
         assertThatCode(() ->
             data.write().format("dns_update")
                     .option("server", xfrHost)
-                    .option("port", xfrPort)
+                    .option("port", DNS_PORT)
                     .option("timeout", 5)
                     .save()
             )
@@ -125,7 +124,7 @@ class DnsSinkRelationProviderTest {
                     .foreachBatch((VoidFunction2<Dataset<Row>, Long>) (batchDf, batchId) -> batchDf.write()
                             .format("dns_update")
                             .option("server", xfrHost)
-                            .option("port", xfrPort)
+                            .option("port", DNS_PORT)
                             .option("timeout", 5)
                             .save())
                     .start();
@@ -151,7 +150,7 @@ class DnsSinkRelationProviderTest {
                     .select("update")
                     .writeStream().format("dns_update")
                     .option("server", xfrHost)
-                    .option("port", xfrPort)
+                    .option("port", DNS_PORT)
                     .option("timeout", 5)
                     .option("checkpointLocation", checkpoint)
                     .start();
@@ -171,7 +170,7 @@ class DnsSinkRelationProviderTest {
 
         data.createTempView(GENERATED_DATA_VIEW_NAME);
         final String createExpr = "CREATE TABLE " + OUTPUT_TABLE_NAME + " USING dns_update " +
-                "OPTIONS (server='" + xfrHost + "', port=" + xfrPort + ", timeout=10)";
+                "OPTIONS (server='" + xfrHost + "', port=" + DNS_PORT + ", timeout=10)";
         log.info("Create SQL expression: {}", createExpr);
         final String insertExpr = "INSERT INTO " + OUTPUT_TABLE_NAME + " TABLE " + GENERATED_DATA_VIEW_NAME;
         log.info("INSERT SQL expression: {}", insertExpr);

@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Slf4j
 class DnsUpdateTest {
+    public static final int DNS_PORT = 15353;
     static final BindContainerFactory CONTAINER_FACTORY = new BindContainerFactory();
 
     @Container
@@ -30,7 +31,7 @@ class DnsUpdateTest {
     @SneakyThrows
     @BeforeEach
     void setUp() {
-        container = CONTAINER_FACTORY.create();
+        container = CONTAINER_FACTORY.create(DNS_PORT);
     }
 
     @AfterEach

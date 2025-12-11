@@ -1,7 +1,6 @@
 package com.acme.dns.spark.read;
 
 import com.acme.dns.spark.BindContainerFactory;
-import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FileSystem;
@@ -27,6 +26,7 @@ import static org.assertj.core.api.Assertions.*;
 @Slf4j
 class DnsSourceRelationProviderTest {
     static final BindContainerFactory CONTAINER_FACTORY = new BindContainerFactory();
+    public static final int DNS_PORT = 15353;
     static SparkSession spark;
     static FileSystem fs;
     String checkpoint;
@@ -36,7 +36,6 @@ class DnsSourceRelationProviderTest {
     GenericContainer<?> container;
 
     Map<String, String> options;
-    int xfrPort;
     String xfrHost;
 
     @SneakyThrows
@@ -54,15 +53,15 @@ class DnsSourceRelationProviderTest {
     @SneakyThrows
     @BeforeEach
     void setUp() {
-        container = CONTAINER_FACTORY.create();
-        xfrPort = container.getMappedPort(53);
+        container = CONTAINER_FACTORY.create(DNS_PORT);
+//        xfrPort = container.getMappedPort(DNS_PORT);
         xfrHost = container.getHost();
 
         checkpoint = "./checkpoint-" + UUID.randomUUID();
         outputPath = "./output-" + UUID.randomUUID();
         options = new HashMap<>();
         options.put("server", xfrHost);
-        options.put("port", String.valueOf(xfrPort));
+        options.put("port", String.valueOf(DNS_PORT));
         options.put("zones", "example.acme.,another.zone");
         options.put("organization", "Acme Inc.");
         options.put("xfr", "ixfr");
@@ -77,6 +76,9 @@ class DnsSourceRelationProviderTest {
     }
 
     private void deleteDir(final String location) throws IOException {
+        if (location == null)  {
+            return;
+        }
         final Path path = new Path(location);
         if (!fs.exists(path)) {
             return;
@@ -127,7 +129,7 @@ class DnsSourceRelationProviderTest {
     void sqlBatchRead() {
         assertThatCode(() -> {
             spark.sql( "CREATE TABLE my_table USING dns " +
-                    "OPTIONS (server='" + xfrHost + "', port=" + xfrPort + ", zones='example.acme,another.zone', organization='Acme Inc.')");
+                    "OPTIONS (server='" + xfrHost + "', port=" + DNS_PORT + ", zones='example.acme,another.zone', organization='Acme Inc.')");
             spark.sql("DESC TABLE my_table").show();
             spark.sql("SELECT * FROM my_table").show(false);
         })

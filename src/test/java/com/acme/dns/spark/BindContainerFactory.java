@@ -3,10 +3,11 @@ package com.acme.dns.spark;
 import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.testcontainers.containers.BindMode;
+import org.jetbrains.annotations.NotNull;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.InternetProtocol;
 import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -14,39 +15,44 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
 public class BindContainerFactory {
-    static final String DOCKER_IMAGE_NAME = "yurkao/dns-bind:9.11";
-    static final DockerImageName DOCKER_IMAGE = DockerImageName.parse(DOCKER_IMAGE_NAME);
-
-    GenericContainer<?> createWin() {
-       return new GenericContainer<>(DOCKER_IMAGE)
-                .withClasspathResourceMapping("bind", "/etc/bind/", BindMode.READ_WRITE);
-    }
-
-    GenericContainer<?> createNix() {
-        return new GenericContainer<>(DOCKER_IMAGE);
-    }
+    private static final Path DOCKERFILE_DIR = Paths.get("src/test/resources");
+    private static final int INTERNAL_DNS_PORT = 53;
 
     @SneakyThrows
-    public GenericContainer<?> create() {
-        final String osName = System.getProperty("os.name");
-        log.info("Current OS name: {}", osName);
-        boolean isWindows = osName.toLowerCase().startsWith("windows");
-        GenericContainer<?> container;
-        if (isWindows) {
-            container = createWin();
-        } else {
-            container = createNix();
-        }
-        final GenericContainer<?> configuredContainer = container
-                .withExposedPorts(53)
-                .waitingFor(Wait.forListeningPort());
+    public GenericContainer<?> create(int port) {
+        final List<String> bindings = createPortBindings(port);
 
-        configuredContainer.start();
-        return configuredContainer;
+        final ImageFromDockerfile image = new ImageFromDockerfile("custom-bind-image")
+                .withFileFromPath(".", DOCKERFILE_DIR)
+                .withFileFromPath("Dockerfile", DOCKERFILE_DIR.resolve("Dockerfile"));
+        final GenericContainer<?> container = new GenericContainer<>(image)
+                .withExposedPorts(INTERNAL_DNS_PORT)
+                .waitingFor(Wait.forListeningPorts(INTERNAL_DNS_PORT));
+
+        container.setPortBindings(bindings);
+        container.start();
+        return container;
+    }
+
+    /**
+     * Create DNS docker port bindings (CP and UDP) to avoid listening on privileged port under ono-privileged user
+     *
+     * @param port non-privileged port to bind service port to,
+     * @return list of port bindings.
+     */
+    private static @NotNull List<String> createPortBindings(final int port) {
+        return Arrays.asList(
+                // UDP: 5353:53/udp
+                String.format("%d:%d/%s", port, INTERNAL_DNS_PORT, InternetProtocol.UDP),
+                // TCP: 5353:53/tcp
+                String.format("%d:%d/%s", port, INTERNAL_DNS_PORT, InternetProtocol.TCP)
+        );
     }
 
     public static void deleteBindJournal() throws URISyntaxException, IOException {
@@ -74,7 +80,9 @@ public class BindContainerFactory {
         if (log.isTraceEnabled()) {
             log.info("Container logs: {}", container.getLogs());
         }
-        container.stop();
+        if (container != null) {
+            container.stop();
+        }
         deleteBindJournal();
     }
 }
