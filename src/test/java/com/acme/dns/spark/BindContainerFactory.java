@@ -3,10 +3,9 @@ package com.acme.dns.spark;
 import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -18,35 +17,20 @@ import java.util.Objects;
 
 @Slf4j
 public class BindContainerFactory {
-    static final String DOCKER_IMAGE_NAME = "yurkao/dns-bind:9.11";
-    static final DockerImageName DOCKER_IMAGE = DockerImageName.parse(DOCKER_IMAGE_NAME);
-
-    GenericContainer<?> createWin() {
-       return new GenericContainer<>(DOCKER_IMAGE)
-                .withClasspathResourceMapping("bind", "/etc/bind/", BindMode.READ_WRITE);
-    }
-
-    GenericContainer<?> createNix() {
-        return new GenericContainer<>(DOCKER_IMAGE);
-    }
+    private static final Path DOCKERFILE_DIR = Paths.get("src/test/resources");
+    public static final int INTERNAL_DNS_PORT = 53;
 
     @SneakyThrows
     public GenericContainer<?> create() {
-        final String osName = System.getProperty("os.name");
-        log.info("Current OS name: {}", osName);
-        boolean isWindows = osName.toLowerCase().startsWith("windows");
-        GenericContainer<?> container;
-        if (isWindows) {
-            container = createWin();
-        } else {
-            container = createNix();
-        }
-        final GenericContainer<?> configuredContainer = container
-                .withExposedPorts(53)
+
+        final ImageFromDockerfile image = new ImageFromDockerfile("custom-bind-image")
+                .withFileFromPath(".", DOCKERFILE_DIR);
+        final GenericContainer<?> container = new GenericContainer<>(image)
+                .withExposedPorts(INTERNAL_DNS_PORT)
                 .waitingFor(Wait.forListeningPort());
 
-        configuredContainer.start();
-        return configuredContainer;
+        container.start();
+        return container;
     }
 
     public static void deleteBindJournal() throws URISyntaxException, IOException {
@@ -71,10 +55,12 @@ public class BindContainerFactory {
 
     @SneakyThrows
     public void stop(GenericContainer<?> container) {
-        if (log.isTraceEnabled()) {
-            log.info("Container logs: {}", container.getLogs());
+        if (container != null) {
+            if (log.isTraceEnabled()) {
+                log.info("Container logs: {}", container.getLogs());
+            }
+            container.stop();
         }
-        container.stop();
         deleteBindJournal();
     }
 }

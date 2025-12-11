@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import static com.acme.dns.spark.BindContainerFactory.INTERNAL_DNS_PORT;
 import static com.acme.dns.spark.BindContainerFactory.deleteBindJournal;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
@@ -44,10 +45,10 @@ class DnsSinkRelationProviderTest {
     @Container
     GenericContainer<?> container;
 
-    // DNS tst resolver to validate updated records
+    // DNS test resolver to validate updated records
     SimpleResolver resolver;
-    int xfrPort;
     String xfrHost;
+    int xfrPort;
     String checkpoint;
     String dataPath;
 
@@ -66,8 +67,8 @@ class DnsSinkRelationProviderTest {
     void setUp() throws IOException, URISyntaxException {
         deleteBindJournal();
         container = CONTAINER_FACTORY.create();
-        xfrPort = container.getMappedPort(53);
         xfrHost = container.getHost();
+        xfrPort = container.getMappedPort(INTERNAL_DNS_PORT);
         resolver = new SimpleResolver(xfrHost);
 
         resolver.setTimeout(Duration.of(10, ChronoUnit.SECONDS));

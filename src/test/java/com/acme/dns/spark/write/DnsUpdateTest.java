@@ -17,6 +17,7 @@ import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.acme.dns.spark.BindContainerFactory.INTERNAL_DNS_PORT;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -48,7 +49,7 @@ class DnsUpdateTest {
         change.setIp("127.0.0.1");
         change.setFqdn("foo." + zoneName);
         change.setTtl(1234);
-        final DnsUpdate dnsUpdate = new DnsUpdate(container.getHost(), container.getFirstMappedPort());
+        final DnsUpdate dnsUpdate = new DnsUpdate(container.getHost(), container.getMappedPort(INTERNAL_DNS_PORT));
         final Name zone = Name.fromString(zoneName);
         final Set<DnsRecordUpdate> updates = Collections.singleton(change);
         assertThatCode(() -> dnsUpdate.update(zone, updates))
@@ -66,7 +67,7 @@ class DnsUpdateTest {
         change.setIp("127.0.0.1");
         change.setFqdn("foo." + zoneName);
         change.setTtl(1234);
-        final DnsUpdate dnsUpdate = new DnsUpdate(container.getHost(), container.getFirstMappedPort());
+        final DnsUpdate dnsUpdate = new DnsUpdate(container.getHost(), container.getMappedPort(INTERNAL_DNS_PORT));
         final Name zone = Name.fromString(zoneName);
         final Set<DnsRecordUpdate> updates = Collections.singleton(change);
         assertThatThrownBy(() ->dnsUpdate.update(zone, updates))

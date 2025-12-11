@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: '0 3 * * *'
 
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
 jobs:
   analyze:
     name: Analyze
@@ -25,28 +30,16 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
+          queries: +security-extended
           languages: ${{ matrix.language }}
+          build-mode: manual
 
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-      # If this step fails, then you should remove it and run the build manually (see below)
-#      - name: Autobuild
-#        uses: github/codeql-action/autobuild@v1
-
-      # ℹ️ Command-line programs to run using the OS shell.
-      # 📚 https://git.io/JvXDl
-
-      # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
-      #    and modify them (or add more) to build your code if your project
-      #    uses a compiled language
-
-      - run: |
+      - name: Run build
+        run: |
+          chmod +x gradlew
           ./gradlew -x test clean jar
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         with:
-          category: "/language:${{matrix.language}}"
+          category: "/language:${{ matrix.language }}"

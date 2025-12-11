@@ -1,7 +1,6 @@
 package com.acme.dns.spark.read;
 
 import com.acme.dns.spark.BindContainerFactory;
-import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FileSystem;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
+import static com.acme.dns.spark.BindContainerFactory.INTERNAL_DNS_PORT;
 import static org.assertj.core.api.Assertions.*;
 
 @Slf4j
@@ -55,9 +55,8 @@ class DnsSourceRelationProviderTest {
     @BeforeEach
     void setUp() {
         container = CONTAINER_FACTORY.create();
-        xfrPort = container.getMappedPort(53);
         xfrHost = container.getHost();
-
+        xfrPort = container.getMappedPort(INTERNAL_DNS_PORT);
         checkpoint = "./checkpoint-" + UUID.randomUUID();
         outputPath = "./output-" + UUID.randomUUID();
         options = new HashMap<>();
@@ -77,6 +76,9 @@ class DnsSourceRelationProviderTest {
     }
 
     private void deleteDir(final String location) throws IOException {
+        if (location == null) {
+            return;
+        }
         final Path path = new Path(location);
         if (!fs.exists(path)) {
             return;
