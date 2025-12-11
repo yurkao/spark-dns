@@ -24,8 +24,7 @@ public class BindContainerFactory {
     public GenericContainer<?> create() {
 
         final ImageFromDockerfile image = new ImageFromDockerfile("custom-bind-image")
-                .withFileFromPath(".", DOCKERFILE_DIR)
-                .withFileFromPath("Dockerfile", DOCKERFILE_DIR.resolve("Dockerfile"));
+                .withFileFromPath(".", DOCKERFILE_DIR);
         final GenericContainer<?> container = new GenericContainer<>(image)
                 .withExposedPorts(INTERNAL_DNS_PORT)
                 .waitingFor(Wait.forListeningPorts(INTERNAL_DNS_PORT));
@@ -33,7 +32,6 @@ public class BindContainerFactory {
         container.start();
         return container;
     }
-
 
     public static void deleteBindJournal() throws URISyntaxException, IOException {
         final URL resource = BindContainerFactory.class.getClassLoader().getResource("bind");
