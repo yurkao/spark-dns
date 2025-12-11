@@ -3,7 +3,7 @@ acl friendly {
         127.0.0.1/32;           // localhost
         192.168.0.0/16;             // internal
         10.0.0.0/8;             // internal
-        172.0.0.0/8;
+        172.17.0.0/16;           // Docker default bridge network
 };
 zone "example.acme" {
      type master;
