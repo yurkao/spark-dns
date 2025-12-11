@@ -38,7 +38,6 @@ class DnsSinkRelationProviderTest {
     static final String GENERATED_DATA_VIEW_NAME = "data";
     static final String OUTPUT_TABLE_NAME = "output";
     static final BindContainerFactory CONTAINER_FACTORY = new BindContainerFactory();
-    public static final int DNS_PORT = 53;
 
     static FileSystem fs;
 
@@ -68,7 +67,7 @@ class DnsSinkRelationProviderTest {
         deleteBindJournal();
         container = CONTAINER_FACTORY.create();
         xfrHost = container.getHost();
-        xfrPort = container.getMappedPort(DNS_PORT);
+        xfrPort = container.getMappedPort(BindContainerFactory.INTERNAL_DNS_PORT);
         resolver = new SimpleResolver(xfrHost);
 
         resolver.setTimeout(Duration.of(10, ChronoUnit.SECONDS));
