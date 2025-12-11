@@ -11,6 +11,10 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 
 
+/**
+ * Shared option parsing for the Spark DNS source and sink (Spark 3.5.x).
+ * Handles conversion of the provided parameter map into strongly typed values.
+ */
 @Data
 public class DnsOptions implements Serializable {
     public static final int MIN_PORT_VALUE = 1;
@@ -34,10 +38,16 @@ public class DnsOptions implements Serializable {
 
     }
 
+    /**
+     * Convert Spark's immutable map into a Java map for easier processing.
+     */
     public static Map<String, String> toJavaMap(scala.collection.immutable.Map<String, String> parameters) {
         return JavaConverters.mapAsJavaMapConverter(parameters).asJava();
     }
 
+    /**
+     * Parse timeout value (seconds) from options map, defaulting when absent.
+     */
     @SneakyThrows
     public static int parseXfrTimeout(Map<String, String> options) {
         final String value = options.getOrDefault(XFR_TIMEOUT_OPT, DEFAULT_XFR_TIMEOUT);
@@ -46,6 +56,9 @@ public class DnsOptions implements Serializable {
         Preconditions.checkArgument(timeout >= 0, "Timeout must be positive number");
         return timeout;
     }
+    /**
+     * Parse DNS server host/port into a socket address.
+     */
     @SneakyThrows
     public static InetSocketAddress parseServer(Map<String, String> options) {
         final String serverValue = options.get(SERVER_OPT);

@@ -24,6 +24,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * RDD implementation that reads DNS zone transfers and converts them into Spark rows.
+ */
 @Slf4j
 public class DnsZoneRDD extends RDD<Row> {
 

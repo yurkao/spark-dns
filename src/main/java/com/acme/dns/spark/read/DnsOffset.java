@@ -14,6 +14,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Structured Streaming offset implementation tracking per-zone serials for DNS polling.
+ */
 @ToString
 @RequiredArgsConstructor
 @Slf4j

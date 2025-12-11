@@ -15,6 +15,9 @@ import java.util.stream.StreamSupport;
 
 import static com.acme.dns.spark.write.DnsPartitionHandler.*;
 
+/**
+ * Handles batch sink partitions by decoding rows and applying DNS updates.
+ */
 @RequiredArgsConstructor
 @Slf4j
 public class DnsBatchPartitionHandler implements ForeachPartitionFunction<Row> {

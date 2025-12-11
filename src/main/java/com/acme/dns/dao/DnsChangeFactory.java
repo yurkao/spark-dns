@@ -9,10 +9,18 @@ import java.util.function.Function;
 @Slf4j
 @RequiredArgsConstructor
 
+/**
+ * Maps DNS Java records into Spark-friendly change objects tagged with an action.
+ */
 public class DnsChangeFactory implements Function<ARecord, DnsRecordChange> {
     private final DnsAction action;
 
 
+    /**
+     * Convert a DNS {@link ARecord} into a {@link DnsRecordChange} with the factory's action.
+     * @param record incoming DNS record
+     * @return normalized change representation
+     */
     @Override
     public DnsRecordChange apply(ARecord record) {
 

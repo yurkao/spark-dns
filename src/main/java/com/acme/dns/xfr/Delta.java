@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+/**
+ * Container for a single IXFR delta segment, tracking start/end serials
+ * and the records that were added or removed between those versions.
+ */
 @NoArgsConstructor
 @Data
 public class Delta {

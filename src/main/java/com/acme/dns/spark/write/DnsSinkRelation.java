@@ -12,6 +12,9 @@ import org.apache.spark.sql.sources.BaseRelation;
 import org.apache.spark.sql.sources.InsertableRelation;
 import org.apache.spark.sql.types.StructType;
 
+/**
+ * Logical relation for the Spark DNS sink, used to route SQL INSERT operations to DNS updates.
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class DnsSinkRelation extends BaseRelation implements InsertableRelation {

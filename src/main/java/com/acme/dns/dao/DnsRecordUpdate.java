@@ -9,6 +9,9 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
+/**
+ * Mutable DNS record representation used by the Spark sink when applying updates.
+ */
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @Data
 @ToString(callSuper = true)

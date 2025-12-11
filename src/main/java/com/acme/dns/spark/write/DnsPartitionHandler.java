@@ -17,6 +17,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Core sink processor that validates, normalizes, groups, and applies DNS updates to the server.
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class DnsPartitionHandler {
@@ -27,6 +30,11 @@ public class DnsPartitionHandler {
 
     private final DnsSinkOptions options;
 
+    /**
+     * Validate and apply a batch of DNS updates grouped by zone.
+     * @param dnsRecordUpdateStream stream of updates from Spark partitions
+     * @throws IOException when DNS server interaction fails
+     */
     void runUpdate(Stream<DnsRecordUpdate> dnsRecordUpdateStream) throws IOException {
         // per zone updates
         final Map<Name, List<DnsRecordUpdate>> zonedRecords = dnsRecordUpdateStream

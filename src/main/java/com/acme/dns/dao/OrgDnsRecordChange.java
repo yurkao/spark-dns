@@ -7,6 +7,9 @@ import lombok.ToString;
 
 import java.io.Serializable;
 
+/**
+ * DNS record change annotated with the owning organization for multi-tenant Spark reads.
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

@@ -22,6 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 
 
+/**
+ * Spark 3.5.x data source entry point for reading DNS zone contents and changes.
+ * Supports both batch and structured streaming modes.
+ */
 @Slf4j
 public class DnsSourceRelationProvider implements
         RelationProvider, // batch read
@@ -33,6 +37,9 @@ public class DnsSourceRelationProvider implements
         return "dns";
     }
 
+    /**
+     * Build a batch relation for DNS zones using the provided options.
+     */
     @SneakyThrows
     @Override
     public BaseRelation createRelation(SQLContext sqlContext, Map<String, String> parameters) {
@@ -52,6 +59,9 @@ public class DnsSourceRelationProvider implements
         return Tuple2.apply(this.shortName(), DnsRecordToRowConverter.SCHEMA);
     }
 
+    /**
+     * Create a streaming source that polls DNS zones and maintains offsets.
+     */
     @SneakyThrows
     @Override
     public Source createSource(SQLContext sqlContext, String metadataPath, Option<StructType> schema, String providerName, Map<String, String> parameters) {

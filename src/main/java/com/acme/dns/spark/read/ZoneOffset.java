@@ -2,6 +2,10 @@ package com.acme.dns.spark.read;
 
 import lombok.*;
 
+/**
+ * Represents a per-zone position in the DNS stream along with a timestamp to
+ * force Spark 3.5.x micro-batch progression.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

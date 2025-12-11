@@ -13,8 +13,17 @@ import scala.collection.immutable.List; // For empty Seq/List for qualifiers
 import java.util.ArrayList;
 import java.util.UUID;
 
+/**
+ * Helper to convert a Spark {@link StructType} into catalyst attribute references
+ * for logical planning within the DNS data source.
+ */
 public class SchemaConverterFullParams {
 
+    /**
+     * Convert every field in the schema into an {@link AttributeReference} preserving metadata.
+     * @param schema Spark schema for the DNS dataset
+     * @return catalyst attribute sequence used when constructing logical plans
+     */
     public static Seq<AttributeReference> convertStructTypeToAttributesFull(StructType schema) {
         java.util.List<AttributeReference> attributes = new ArrayList<>();
 

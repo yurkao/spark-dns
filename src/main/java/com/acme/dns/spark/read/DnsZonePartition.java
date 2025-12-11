@@ -5,6 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.apache.spark.Partition;
 
+/**
+ * Spark partition wrapper that binds a partition id to DNS zone metadata.
+ */
 @RequiredArgsConstructor
 @Getter
 @ToString

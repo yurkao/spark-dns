@@ -15,7 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Zone transfer handler.
+ * Collects records produced during AXFR/IXFR operations so that the Spark
+ * DNS source can translate them into streaming offsets and row data.
  */
 @Getter
 @Slf4j
@@ -64,6 +65,10 @@ public class DnsZoneTransferHandler implements ZoneTransferIn.ZoneTransferHandle
         return soa.getSerial();
     }
 
+    /**
+     * Route incoming zone transfer records to the appropriate IXFR or AXFR collector.
+     * @param r DNS record emitted by the transfer stream
+     */
     public void handleRecord(Record r) {
         Preconditions.checkArgument(type!=null, "start AXFR/IXFR should be called before");
         switch (type) {
