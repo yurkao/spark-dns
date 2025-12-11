@@ -15,6 +15,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Low-level DNS client used by the Spark sink to apply A-record updates to an authoritative server.
+ */
 @Slf4j
 public class DnsUpdate {
     private static final int RECORD_TYPE = Type.A;

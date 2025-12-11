@@ -12,6 +12,9 @@ import java.util.Arrays;
 import static com.acme.dns.spark.write.DnsPartitionHandler.UPDATE_COLUMN;
 import static com.acme.dns.spark.write.DnsSinkRelation.DATA_SOURCE_NAME;
 
+/**
+ * Spark 3.5.x data source provider that exposes DNS updates for batch and streaming sinks.
+ */
 public class DnsSinkRelationProvider implements
         CreatableRelationProvider, // batch write via Dataset::write API
         RelationProvider, // batch write via SQL INSERT INTO

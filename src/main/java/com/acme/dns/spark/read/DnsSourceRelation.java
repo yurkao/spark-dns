@@ -12,6 +12,9 @@ import org.apache.spark.sql.types.StructType;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Batch relation exposing DNS records as a Spark table for the DNS data source.
+ */
 @RequiredArgsConstructor
 @Slf4j
 public class DnsSourceRelation extends BaseRelation implements TableScan {

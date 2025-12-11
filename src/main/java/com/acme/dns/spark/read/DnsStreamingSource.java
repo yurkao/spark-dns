@@ -25,6 +25,10 @@ import java.util.function.Function;
 
 import static com.acme.dns.spark.read.SchemaConverterFullParams.convertStructTypeToAttributesFull;
 
+/**
+ * Structured Streaming source that surfaces DNS zone transfers as Spark rows while
+ * tracking per-zone offsets compatible with Spark 3.5.x.
+ */
 @ToString(onlyExplicitlyIncluded=true)
 @Slf4j
 public class DnsStreamingSource implements Source {

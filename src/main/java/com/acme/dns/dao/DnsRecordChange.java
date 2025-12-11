@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * DNS A record
+ * DNS A record produced by a zone transfer, enriched with the originating zone and timestamp.
  */
 @NoArgsConstructor
 @ToString

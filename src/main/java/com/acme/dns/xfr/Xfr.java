@@ -24,6 +24,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
+/**
+ * Performs AXFR/IXFR operations against an authoritative DNS server and
+ * converts the results into change records consumable by the Spark 3.5.x
+ * structured streaming source.
+ */
 public class Xfr {
     private final Name zoneName;
     private final SocketAddress dnsServer;
@@ -39,6 +44,13 @@ public class Xfr {
         this.xfrType = xfrType;
     }
 
+    /**
+     * Execute a zone transfer using the configured strategy starting from the provided serial.
+     * @param serial starting SOA serial
+     * @return list of DNS record changes derived from the transfer
+     * @throws IOException networking or parsing errors
+     * @throws ZoneTransferException transfer level failures
+     */
     public List<DnsRecordChange> fetch(long serial) throws IOException, ZoneTransferException {
         log.info("Polling {} DNS zone with initial serial {} and timeout {}", zoneName, serial, timeout);
         final ZoneTransferIn xfr = ZoneTransferIn.newIXFR(zoneName, serial, false, dnsServer, null);
@@ -54,6 +66,11 @@ public class Xfr {
         return getRecords(resultXfrType);
     }
 
+    /**
+     * Convert the collected transfer output into Spark-friendly change objects.
+     * @param xfrType transfer strategy that produced the records
+     * @return ordered list of record changes
+     */
     public List<DnsRecordChange> getRecords(XfrType xfrType) {
         final ArrayList<DnsRecordChange> dnsRecords = new ArrayList<>();
         log.info("Getting DNS records from {}", xfrType.name());
