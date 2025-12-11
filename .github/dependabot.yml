@@ -4,3 +4,9 @@ updates:
     directory: "/" 
     schedule:
       interval: "daily"
+  - package-ecosystem: "docker"
+    # The directory containing the Dockerfile (root directory is "/")
+    directory: "/src/test/resources"
+    schedule:
+      # Check for updates daily
+      interval: "daily"
