@@ -1,3 +1,6 @@
+languages:
+  - java
+
 queries:
   - uses: security-and-quality
 
