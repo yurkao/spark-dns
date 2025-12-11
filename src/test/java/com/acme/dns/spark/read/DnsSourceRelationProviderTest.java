@@ -31,12 +31,12 @@ class DnsSourceRelationProviderTest {
     static FileSystem fs;
     String checkpoint;
     String outputPath;
-    int xfrPort;
 
     @Container
     GenericContainer<?> container;
 
     Map<String, String> options;
+    int xfrPort;
     String xfrHost;
 
     @SneakyThrows
@@ -76,7 +76,7 @@ class DnsSourceRelationProviderTest {
     }
 
     private void deleteDir(final String location) throws IOException {
-        if (location == null)  {
+        if (location == null) {
             return;
         }
         final Path path = new Path(location);
