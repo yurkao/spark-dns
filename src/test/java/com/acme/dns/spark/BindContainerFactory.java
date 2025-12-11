@@ -18,7 +18,7 @@ import java.util.Objects;
 @Slf4j
 public class BindContainerFactory {
     private static final Path DOCKERFILE_DIR = Paths.get("src/test/resources");
-    private static final int INTERNAL_DNS_PORT = 53;
+    public static final int INTERNAL_DNS_PORT = 53;
 
     @SneakyThrows
     public GenericContainer<?> create() {
@@ -27,7 +27,7 @@ public class BindContainerFactory {
                 .withFileFromPath(".", DOCKERFILE_DIR);
         final GenericContainer<?> container = new GenericContainer<>(image)
                 .withExposedPorts(INTERNAL_DNS_PORT)
-                .waitingFor(Wait.forListeningPorts(INTERNAL_DNS_PORT));
+                .waitingFor(Wait.forListeningPort());
 
         container.start();
         return container;

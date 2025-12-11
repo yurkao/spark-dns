@@ -21,12 +21,12 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
+import static com.acme.dns.spark.BindContainerFactory.INTERNAL_DNS_PORT;
 import static org.assertj.core.api.Assertions.*;
 
 @Slf4j
 class DnsSourceRelationProviderTest {
     static final BindContainerFactory CONTAINER_FACTORY = new BindContainerFactory();
-    public static final int DNS_PORT = 53;
     static SparkSession spark;
     static FileSystem fs;
     String checkpoint;
@@ -56,7 +56,7 @@ class DnsSourceRelationProviderTest {
     void setUp() {
         container = CONTAINER_FACTORY.create();
         xfrHost = container.getHost();
-        xfrPort = container.getMappedPort(DNS_PORT);
+        xfrPort = container.getMappedPort(INTERNAL_DNS_PORT);
         checkpoint = "./checkpoint-" + UUID.randomUUID();
         outputPath = "./output-" + UUID.randomUUID();
         options = new HashMap<>();
