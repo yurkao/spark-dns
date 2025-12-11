@@ -24,9 +24,17 @@ tasks.withType(JavaCompile) {
     options.compilerArgs << '-Xlint:unchecked'
     options.deprecation = true
 }
-
-apply from: "./3rdparties.gradle"
-
+ext {
+    versions = [
+    		 spark: "3.1.1",
+    		 lombok: "1.18.16",
+    		 junit5: "5.3.1",
+    		 junitJupiter: "5.4.2",
+    		 testContainers: "1.15.2",
+    		 assertJ: "3.19.0",
+    		 dnsjava: "3.3.1"
+    ]
+}
 dependencies {
 
     compile group: "dnsjava", name: "dnsjava", version: "${versions.dnsjava}"
