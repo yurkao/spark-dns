@@ -2,13 +2,12 @@ package com.acme.dns.spark.read;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.CharStreams;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.*;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
@@ -39,7 +38,7 @@ public class ProgressSerDe {
         this.maxKeptCommits = maxKeptCommits;
         fs.mkdirs(metadataPath);
         final FileStatus[] fileStatuses = fs.listStatus(metadataPath);
-        commits.addAll(Arrays.stream(fileStatuses).filter(COMMIT_FILE_FILTER).collect(Collectors.toList()));
+        commits.addAll(Arrays.stream(fileStatuses).filter(COMMIT_FILE_FILTER).toList());
     }
 
     public void loadSavedProgress(Map<DnsZoneParams, ZoneVersion> zoneVersionMap) {
@@ -96,9 +95,8 @@ public class ProgressSerDe {
             return Collections.emptyMap();
         }
         final String content;
-        try(final FSDataInputStream inputStream = fs.open(progressPath)) {
-            content = CharStreams.toString(new InputStreamReader(
-                    inputStream, StandardCharsets.UTF_8));
+        try (final FSDataInputStream inputStream = fs.open(progressPath)) {
+            content = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         }
         final TypeReference<Map<String, Long>> typeRef = new TypeReference<>() {};
         return mapper.readValue(content, typeRef);
@@ -112,7 +110,7 @@ public class ProgressSerDe {
                 .sorted(MOST_RECENT_BATCH_FIRST)
                 .skip(maxKeptCommits)
                 .map(this::deleteOldCommit)
-                .collect(Collectors.toList());
+                .toList();
         log.info("Removed {} old commits", removedCommits.size());
         commits.removeAll(removedCommits);
     }
@@ -131,7 +129,7 @@ public class ProgressSerDe {
 
     /**
      * Get current batch ID
-     * @return 0 if there're no commits, otherwise last commit +1
+     * @return 0 if there are no commits, otherwise last commit +1
      */
     public int getcurrentBatchId() {
         final int batchId;
