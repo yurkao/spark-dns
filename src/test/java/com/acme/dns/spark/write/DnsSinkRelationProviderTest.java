@@ -45,7 +45,7 @@ class DnsSinkRelationProviderTest {
     @Container
     GenericContainer<?> container;
 
-    // DNS tst resolver to validate updated records
+    // DNS test resolver to validate updated records
     SimpleResolver resolver;
     String xfrHost;
     int xfrPort;
