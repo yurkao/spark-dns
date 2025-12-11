@@ -1,6 +1,7 @@
 package com.acme.dns.spark.read;
 
 import com.acme.dns.spark.BindContainerFactory;
+import com.google.common.base.Preconditions;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FileSystem;
@@ -42,12 +43,13 @@ class DnsSourceRelationProviderTest {
     @BeforeAll
     static void init() {
         spark = SparkSession.builder().master("local").getOrCreate();
+        Preconditions.checkArgument(spark != null);
         fs = FileSystem.newInstance(spark.sparkContext().hadoopConfiguration());
     }
 
     @AfterAll
     static void cleanup() {
-        spark.close();
+        // spark.close();
     }
 
     @SneakyThrows
