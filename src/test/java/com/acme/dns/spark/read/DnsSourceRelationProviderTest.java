@@ -43,7 +43,6 @@ class DnsSourceRelationProviderTest {
     @BeforeAll
     static void init() {
         spark = SparkSession.builder().master("local").getOrCreate();
-        Preconditions.checkArgument(spark != null);
         fs = FileSystem.newInstance(spark.sparkContext().hadoopConfiguration());
     }
 
