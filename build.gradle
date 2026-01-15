@@ -33,7 +33,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 ext {
     versions = [
-         spark: "3.5.7",
+         spark: "3.5.8",
          lombok: "1.18.42",
          junit5: "6.0.1",
          junitJupiter: "6.0.1",
