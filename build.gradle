@@ -39,7 +39,7 @@ ext {
          junitJupiter: "6.0.1",
          testContainers: "2.0.2",
          testContainersJupiter: "1.21.3",
-    	 assertJ: "3.27.6",
+    	 assertJ: "3.27.7",
          dnsjava: "3.6.3",
     ]
 }
